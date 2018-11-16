@@ -27,6 +27,15 @@ namespace Nop.Plugin.Api.DTOs.Products
         private List<ProductSpecificationAttributeDto> _productSpecificationAttributes;
         private List<int> _associatedProductIds;
         private List<string> _tags;
+        private List<TierPriceDto> _tierPrices;
+        private List<ProductAttributeCombinationDto> _productAttributeCombinations;
+        private List<ProductGenericAttributeDto> _productGenericAttributes;
+
+        /// <summary>
+        /// id added for admind!
+        /// </summary>
+        [JsonProperty("admind_id")]
+        public int AdmindId { get; set; }
 
         /// <summary>
         /// Gets or sets the values indicating whether this product is visible in catalog or search results.
@@ -355,6 +364,7 @@ namespace Nop.Plugin.Api.DTOs.Products
         /// </summary>
         [JsonProperty("product_cost")]
         public decimal? ProductCost { get; set; }
+        /*
         /// <summary>
         /// Gets or sets the product special price
         /// </summary>
@@ -370,9 +380,11 @@ namespace Nop.Plugin.Api.DTOs.Products
         /// </summary>
         [JsonProperty("special_price_end_date_time_utc")]
         public DateTime? SpecialPriceEndDateTimeUtc { get; set; }
+        */
         /// <summary>
         /// Gets or sets a value indicating whether a customer enters price
         /// </summary>
+        /// 
         [JsonProperty("customer_enters_price")]
         public bool? CustomerEntersPrice { get; set; }
         /// <summary>
@@ -590,6 +602,19 @@ namespace Nop.Plugin.Api.DTOs.Products
             }
         }
 
+        [JsonProperty("attribute_combinations")]
+        public List<ProductAttributeCombinationDto> ProductAttributeCombinations
+        {
+            get
+            {
+                return _productAttributeCombinations;
+            }
+            set
+            {
+                _productAttributeCombinations = value;
+            }
+        }
+
         [JsonProperty("product_specification_attributes")]
         public List<ProductSpecificationAttributeDto> ProductSpecificationAttributes
         {
@@ -635,5 +660,61 @@ namespace Nop.Plugin.Api.DTOs.Products
 
         [JsonProperty("se_name")]
         public string SeName { get; set; }
+
+        /*EXTRA*/
+        /// <summary>
+        /// 
+        /// </summary>
+        [JsonProperty("mark_as_new")]
+        public bool MarkAsNew { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [JsonProperty("mark_as_new_start_datetimeutc")]
+        public DateTime? MarkAsNewStartDateTimeUtc { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [JsonProperty("mark_as_new_end_datetimeutc")]
+        public DateTime? MarkAsNewEndDateTimeUtc { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>        
+        [JsonProperty("tierprices")]
+        public List<TierPriceDto> DtoTierPrices
+        {
+            get
+            {
+                return _tierPrices;
+            }
+            set
+            {
+                _tierPrices = value;
+            }
+        }
+        
+        /// <summary>
+        /// Tax category id
+        /// </summary>
+        [JsonProperty("tax_category_id")]
+        public int? TaxCategoryId { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [JsonProperty("generic_attributes")]
+        public List<ProductGenericAttributeDto> DtoGenericAttributes
+        {
+            get
+            {
+                return _productGenericAttributes;
+            }
+
+            set
+            {
+                _productGenericAttributes = value;
+            }
+        }
     }
 }

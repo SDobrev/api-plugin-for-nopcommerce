@@ -17,5 +17,11 @@ namespace Nop.Plugin.Api.DTOs.Images
 
         [JsonIgnore]
         public string MimeType { get; set; }
+        
+        [JsonProperty("alt")]
+        public string Alt { get; set; }
+
+        [JsonProperty("title")]
+        public string Title { get; set; }
     }
 }

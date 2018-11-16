@@ -104,5 +104,11 @@ namespace Nop.Plugin.Api.DTOs.Products
                 }
             }
         }
+
+        /// <summary>
+        /// Gets or sets the product attribute value id
+        /// </summary>
+        [JsonProperty("record_id")]
+        public int RecordId { get; set; }
     }
 }

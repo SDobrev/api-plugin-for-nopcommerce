@@ -148,29 +148,8 @@ namespace Nop.Plugin.Api.Services
             // This is in case we have first and last names set for the customer.
             if (customerAttributeMappings.Count > 0)
             {
-                var customer = customerAttributeMappings.First().Customer;
                 // The customer object is the same in all mappings.
-                customerDto = customer.ToDto();
-
-                var defaultStoreLanguageId = GetDefaultStoreLangaugeId();
-
-                // If there is no Language Id generic attribute create one with the default language id.
-                if (!customerAttributeMappings.Any(cam => cam?.Attribute != null && cam.Attribute.Key.Equals(LanguageId, StringComparison.InvariantCultureIgnoreCase)))
-                {
-                    var languageId = new GenericAttribute
-                    {
-                        Key = LanguageId,
-                        Value = defaultStoreLanguageId.ToString()
-                    };
-
-                    var customerAttributeMappingDto = new CustomerAttributeMappingDto
-                    {
-                        Customer = customer,
-                        Attribute = languageId
-                    };
-
-                    customerAttributeMappings.Add(customerAttributeMappingDto);
-                }
+                customerDto = customerAttributeMappings.First().Customer.ToDto();
 
                 foreach (var mapping in customerAttributeMappings)
                 {

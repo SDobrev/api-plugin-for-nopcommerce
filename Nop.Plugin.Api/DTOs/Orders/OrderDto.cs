@@ -295,5 +295,8 @@ namespace Nop.Plugin.Api.DTOs.Orders
         /// </summary>
         [JsonProperty("customer_tax_display_type")]
         public string CustomerTaxDisplayType { get; set; }
+
+        [JsonProperty("comment")]
+        public string Comment { get; set; }
     }
 }

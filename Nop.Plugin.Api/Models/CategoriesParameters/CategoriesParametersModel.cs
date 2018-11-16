@@ -48,5 +48,11 @@ namespace Nop.Plugin.Api.Models.CategoriesParameters
         /// </summary>
         [JsonProperty("fields")]
         public string Fields { get; set; }
+
+        /// <summary>
+        /// comma-separated list of fields to include in the response
+        /// </summary>
+        [JsonProperty("languageid")]
+        public int? LanguageId { get; set; }
     }
 }

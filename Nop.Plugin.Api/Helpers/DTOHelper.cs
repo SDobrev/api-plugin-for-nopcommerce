@@ -28,6 +28,8 @@ using Nop.Services.Stores;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Nop.Services.Common;
+using Nop.Services.Orders;
 
 namespace Nop.Plugin.Api.Helpers
 {
@@ -47,6 +49,8 @@ namespace Nop.Plugin.Api.Helpers
         private readonly IStoreMappingService _storeMappingService;
         private readonly IStoreService _storeService;
         private readonly IUrlRecordService _urlRecordService;
+        private readonly ICheckoutAttributeParser _checkoutAttributeParser;
+        private readonly IGenericAttributeService _genericAttributeService;
 
         public DTOHelper(IProductService productService,
             IAclService aclService,
@@ -61,7 +65,9 @@ namespace Nop.Plugin.Api.Helpers
             IStoreService storeService,
             ILocalizationService localizationService,
             IUrlRecordService urlRecordService,
-            IProductTagService productTagService)
+            IProductTagService productTagService,
+            IGenericAttributeService genericAttributeService,
+            ICheckoutAttributeParser checkoutAttributeParser)
         {
             _productService = productService;
             _aclService = aclService;
@@ -77,6 +83,8 @@ namespace Nop.Plugin.Api.Helpers
             _localizationService = localizationService;
             _urlRecordService = urlRecordService;
             _productTagService = productTagService;
+            _genericAttributeService = genericAttributeService;
+            _checkoutAttributeParser = checkoutAttributeParser;
         }
 
         public ProductDto PrepareProductDTO(Product product)
@@ -116,7 +124,61 @@ namespace Nop.Plugin.Api.Helpers
                 productDto.LocalizedNames.Add(localizedNameDto);
             }
 
+            /*EXTRA*/
+            PrepareProductAttributeCombinations(product.ProductAttributeCombinations, productDto);
+            PrepareProductTierPrices(product.TierPrices, productDto);
+            PrepareProductGenericAttributes(product, productDto);
+            /*EXTRA*/
+
             return productDto;
+        }
+
+        private void PrepareProductGenericAttributes(Product product, ProductDto productDto)
+        {
+            var attributes = _genericAttributeService.GetAttributesForEntity(product.Id, "Product");
+            attributes = attributes.Where(a => a.Key != "nop.product.admindid" && a.Key != "nop.product.attributevalue.recordid" && a.Key != "nop.product.attribute.combination.records" && a.Key != "nop.product.attribute.combination.admind_id").ToList();
+
+            productDto.DtoGenericAttributes = new List<ProductGenericAttributeDto>();
+            foreach (var attr in attributes)
+            {
+                productDto.DtoGenericAttributes.Add(new ProductGenericAttributeDto()
+                {
+                    Name = attr.Key.Replace("nop.product.", ""),
+                    Value = attr.Value
+                });
+            }
+        }
+
+        private void PrepareProductAttributeCombinations(ICollection<ProductAttributeCombination> productAttributeCombinations, ProductDto productDto)
+        {
+            if (productDto.ProductAttributeCombinations == null)
+                productDto.ProductAttributeCombinations = new List<ProductAttributeCombinationDto>();
+
+            foreach (var combination in productAttributeCombinations)
+            {
+                productDto.ProductAttributeCombinations.Add(new ProductAttributeCombinationDto()
+                {
+                    Records = _genericAttributeService.GetAttribute<List<int>>(combination, "nop.product.attribute.combination.records"),
+                    Id = combination.Id,
+                    StockQuantity = combination.StockQuantity,
+                    Gtin = combination.Gtin,
+                    Sku = combination.Sku,
+                    AllowOutOfStockOrders = combination.AllowOutOfStockOrders,
+                    ManufacturerPartNumber = combination.ManufacturerPartNumber,
+                    NotifyAdminForQuantityBelow = combination.NotifyAdminForQuantityBelow,
+                    OverriddenPrice = combination.OverriddenPrice
+                });
+            }
+        }
+
+        private void PrepareProductTierPrices(ICollection<TierPrice> tierPrices, ProductDto productDto)
+        {
+            productDto.DtoTierPrices = new List<TierPriceDto>();
+
+            foreach (var tier in tierPrices)
+            {
+                productDto.DtoTierPrices.Add(tier.ToDto());
+            }
         }
 
         public CategoryDto PrepareCategoryDTO(Category category)
@@ -159,7 +221,12 @@ namespace Nop.Plugin.Api.Helpers
         {
             var orderDto = order.ToDto();
 
-            orderDto.OrderItems = order.OrderItems.Select(PrepareOrderItemDTO).ToList();
+            var checkoutAttributes = _checkoutAttributeParser.ParseCheckoutAttributeValues(order.CheckoutAttributesXml);
+            var commentAttribute = checkoutAttributes.FirstOrDefault(x => x.Name.Equals("kommentar", StringComparison.InvariantCultureIgnoreCase));
+            if (commentAttribute != null)
+            {
+                orderDto.Comment = commentAttribute.Name;
+            }
 
             var customerDto = _customerApiService.GetCustomerById(order.Customer.Id);
 
@@ -243,8 +310,11 @@ namespace Nop.Plugin.Api.Helpers
                         Id = productPicture.Id,
                         Position = productPicture.DisplayOrder,
                         Src = imageDto.Src,
-                        Attachment = imageDto.Attachment
-                    };
+                        Attachment = imageDto.Attachment,
+                        Alt = productPicture.Picture.AltAttribute,
+                        Title = productPicture.Picture.TitleAttribute,
+                        PictureId = productPicture.PictureId
+                };
 
                     productDto.Images.Add(productImageDto);
                 }
@@ -323,6 +393,7 @@ namespace Nop.Plugin.Api.Helpers
             if (productAttributeValue != null)
             {
                 productAttributeValueDto = productAttributeValue.ToDto();
+                productAttributeValueDto.RecordId = _genericAttributeService.GetAttribute<int>(productAttributeValue, "nop.product.attributevalue.recordid");
                 if (productAttributeValue.ImageSquaresPictureId > 0)
                 {
                     var imageSquaresPicture =
@@ -340,7 +411,7 @@ namespace Nop.Plugin.Api.Helpers
                         product.ProductPictures.FirstOrDefault(pp => pp.PictureId == productAttributeValue.PictureId);
                     if (productPicture != null)
                     {
-                        productAttributeValueDto.ProductPictureId = productPicture.Id;
+                        productAttributeValueDto.ProductPictureId = productPicture.PictureId;
                     }
                 }
             }

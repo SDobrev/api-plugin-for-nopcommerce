@@ -116,6 +116,12 @@
             _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Api.Admin.EnableLogging", "Enable Logging");
             _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Api.Admin.EnableLogging.Hint", "By enable logging you will see webhook messages in the Log. These messages are needed ONLY for diagnostic purposes. NOTE: A restart is required when changing this setting in order to take effect");
 
+            //Locals for Order cature used on order notes. 
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Api.Orders.Capture", "Api Plugin Capture : {0}");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Api.Orders.CaptureStatus.Error", "Error");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Api.Orders.CaptureStatus.Ok", "OK");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Api.Orders.CaptureStatus.CannotCapture", "Order cannot be captured");
+
             ApiSettings settings = new ApiSettings
             {
                 EnableApi = true,
@@ -181,6 +187,11 @@
             _localizationService.DeletePluginLocaleResource("Api.WebHooks.CouldNotDeleteWebhook");
             _localizationService.DeletePluginLocaleResource("Api.WebHooks.CouldNotDeleteWebhooks");
             _localizationService.DeletePluginLocaleResource("Api.WebHooks.InvalidFilters");
+
+            _localizationService.DeletePluginLocaleResource("Plugins.Api.Orders.Capture");
+            _localizationService.DeletePluginLocaleResource("Plugins.Api.Orders.CaptureStatus.Error");
+            _localizationService.DeletePluginLocaleResource("Plugins.Api.Orders.CaptureStatus.Ok");
+            _localizationService.DeletePluginLocaleResource("Plugins.Api.Orders.CaptureStatus.CannotCapture");
 
             base.Uninstall();
 
