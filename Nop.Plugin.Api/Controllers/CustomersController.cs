@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Infrastructure;
+using Nop.Plugin.Api.APIAuth;
 using Nop.Plugin.Api.Attributes;
 using Nop.Plugin.Api.Constants;
 using Nop.Plugin.Api.Delta;
@@ -34,7 +35,7 @@ namespace Nop.Plugin.Api.Controllers
     using DTOs.Errors;
     using JSON.Serializers;
 
-    [ApiAuthorize(Policy = JwtBearerDefaults.AuthenticationScheme, AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [BasicAuthentication]
     public class CustomersController : BaseApiController
     {
         private readonly ICustomerApiService _customerApiService;
