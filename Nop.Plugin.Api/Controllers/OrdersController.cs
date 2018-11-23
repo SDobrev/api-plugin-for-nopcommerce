@@ -1,16 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text;
+﻿using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Orders;
+using Nop.Core.Domain.Shipping;
 using Nop.Core.Infrastructure;
+using Nop.Plugin.Api.APIAuth;
 using Nop.Plugin.Api.Attributes;
 using Nop.Plugin.Api.Constants;
 using Nop.Plugin.Api.Delta;
-using Nop.Plugin.Api.DTOs;
 using Nop.Plugin.Api.DTOs.OrderItems;
 using Nop.Plugin.Api.DTOs.Orders;
 using Nop.Plugin.Api.Factories;
@@ -19,7 +16,6 @@ using Nop.Plugin.Api.JSON.ActionResults;
 using Nop.Plugin.Api.ModelBinders;
 using Nop.Plugin.Api.Models.OrdersParameters;
 using Nop.Plugin.Api.Services;
-using Nop.Plugin.Api.Validators;
 using Nop.Services.Catalog;
 using Nop.Services.Common;
 using Nop.Services.Customers;
@@ -32,16 +28,18 @@ using Nop.Services.Payments;
 using Nop.Services.Security;
 using Nop.Services.Shipping;
 using Nop.Services.Stores;
-using Microsoft.AspNetCore.Mvc;
-using Nop.Core.Domain.Shipping;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Text;
 
 namespace Nop.Plugin.Api.Controllers
 {
-    using Microsoft.AspNetCore.Authentication.JwtBearer;
     using DTOs.Errors;
     using JSON.Serializers;
 
-    [ApiAuthorize(Policy = JwtBearerDefaults.AuthenticationScheme, AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [BasicAuthentication]
     public class OrdersController : BaseApiController
     {
         private readonly IOrderApiService _orderApiService;

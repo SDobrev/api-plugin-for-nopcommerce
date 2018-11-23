@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
+﻿using Nop.Core;
 using Nop.Core.Domain.Orders;
 using Nop.Plugin.Api.Attributes;
 using Nop.Plugin.Api.Constants;
 using Nop.Plugin.Api.Delta;
 using Nop.Plugin.Api.DTOs.ShoppingCarts;
 using Nop.Plugin.Api.Factories;
+using Nop.Plugin.Api.Helpers;
 using Nop.Plugin.Api.JSON.ActionResults;
 using Nop.Plugin.Api.ModelBinders;
 using Nop.Plugin.Api.Models.ShoppingCartsParameters;
@@ -21,17 +19,19 @@ using Nop.Services.Media;
 using Nop.Services.Orders;
 using Nop.Services.Security;
 using Nop.Services.Stores;
-using Nop.Plugin.Api.Helpers;
-using Nop.Core;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using Nop.Plugin.Api.APIAuth;
 
 namespace Nop.Plugin.Api.Controllers
 {
-    using Microsoft.AspNetCore.Authentication.JwtBearer;
-    using Microsoft.AspNetCore.Mvc;
     using DTOs.Errors;
     using JSON.Serializers;
+    using Microsoft.AspNetCore.Mvc;
 
-    [ApiAuthorize(Policy = JwtBearerDefaults.AuthenticationScheme, AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [BasicAuthentication]
     public class ShoppingCartItemsController : BaseApiController
     {
         private readonly IShoppingCartItemApiService _shoppingCartItemApiService;

@@ -1,6 +1,7 @@
 ﻿using Nop.Core;
 using Nop.Plugin.Api.Attributes;
 using Nop.Plugin.Api.DTOs.Stores;
+using Nop.Plugin.Api.Helpers;
 using Nop.Plugin.Api.JSON.ActionResults;
 using Nop.Services.Customers;
 using Nop.Services.Discounts;
@@ -11,16 +12,15 @@ using Nop.Services.Security;
 using Nop.Services.Stores;
 using System.Collections.Generic;
 using System.Net;
-using Nop.Plugin.Api.Helpers;
+using Nop.Plugin.Api.APIAuth;
 
 namespace Nop.Plugin.Api.Controllers
 {
-    using Microsoft.AspNetCore.Authentication.JwtBearer;
-    using Microsoft.AspNetCore.Mvc;
     using DTOs.Errors;
     using JSON.Serializers;
+    using Microsoft.AspNetCore.Mvc;
 
-    [ApiAuthorize(Policy = JwtBearerDefaults.AuthenticationScheme, AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [BasicAuthentication]
     public class StoreController : BaseApiController
     {
         private readonly IStoreContext _storeContext;

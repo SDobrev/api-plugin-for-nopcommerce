@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Nop.Plugin.Api.APIAuth;
 using Nop.Plugin.Api.Attributes;
 using Nop.Plugin.Api.DTOs.Languages;
 using Nop.Plugin.Api.Helpers;
@@ -20,7 +21,7 @@ namespace Nop.Plugin.Api.Controllers
     using DTOs.Errors;
     using JSON.Serializers;
 
-    [ApiAuthorize(Policy = JwtBearerDefaults.AuthenticationScheme, AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [BasicAuthentication]
     public class LanguagesController : BaseApiController
     {
         private ILanguageService _languageService;
