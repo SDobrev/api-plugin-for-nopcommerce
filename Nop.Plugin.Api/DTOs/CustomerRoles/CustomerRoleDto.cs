@@ -6,6 +6,9 @@ namespace Nop.Plugin.Api.DTOs.CustomerRoles
     [JsonObject(Title = "customer_role")]
     public class CustomerRoleDto : BaseDto
     {
+        [JsonProperty("id")]
+        public string IdAsString { get => Id.ToString(); set => Id = int.Parse(value); }
+
         /// <summary>
         /// Gets or sets the customer role name
         /// </summary>

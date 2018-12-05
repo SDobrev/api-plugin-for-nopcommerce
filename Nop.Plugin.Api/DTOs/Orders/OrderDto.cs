@@ -15,6 +15,9 @@ namespace Nop.Plugin.Api.DTOs.Orders
     {
         private ICollection<OrderItemDto> _orderItems;
 
+        [JsonProperty("id")]
+        public string IdAsString { get => Id.ToString(); set => Id = int.Parse(value); }
+
         [JsonProperty("store_id")]
         public int? StoreId { get; set; }
 

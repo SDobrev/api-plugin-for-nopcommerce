@@ -17,6 +17,9 @@ namespace Nop.Plugin.Api.DTOs.Manufacturers
         private List<int> _discountIds;
         private List<int> _roleIds;
 
+        [JsonProperty("id")]
+        public string IdAsString { get => Id.ToString(); set => Id = int.Parse(value); }
+
         /// <summary>
         /// Gets or sets the name
         /// </summary>

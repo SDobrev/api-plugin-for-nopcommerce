@@ -15,6 +15,9 @@ namespace Nop.Plugin.Api.DTOs.OrderItems
     {
         private ICollection<ProductItemAttributeDto> _attributes;
 
+        [JsonProperty("id")]
+        public string IdAsString { get => Id.ToString(); set => Id = int.Parse(value); }
+
         /// <summary>
         /// Gets or sets the selected attributes
         /// </summary>

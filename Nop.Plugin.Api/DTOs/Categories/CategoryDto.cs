@@ -19,6 +19,9 @@ namespace Nop.Plugin.Api.DTOs.Categories
         private List<int> _discountIds;
         private List<int> _roleIds;
 
+        [JsonProperty("id")]
+        public string IdAsString { get => Id.ToString(); set => Id = int.Parse(value); }
+
         [JsonProperty("name")]
         public string Name { get; set; }
 

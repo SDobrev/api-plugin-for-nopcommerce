@@ -7,6 +7,9 @@ namespace Nop.Plugin.Api.DTOs.Categories
     [JsonObject(Title = "news_letter_subscription")]
     public class NewsLetterSubscriptionDto : BaseDto
     {
+        [JsonProperty("id")]
+        public string IdAsString { get => Id.ToString(); set => Id = int.Parse(value); }
+
         /// <summary>
         /// Gets or sets the email
         /// </summary>

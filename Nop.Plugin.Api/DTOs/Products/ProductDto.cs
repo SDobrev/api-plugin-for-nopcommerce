@@ -31,6 +31,9 @@ namespace Nop.Plugin.Api.DTOs.Products
         private List<ProductAttributeCombinationDto> _productAttributeCombinations;
         private List<ProductGenericAttributeDto> _productGenericAttributes;
 
+        [JsonProperty("id")]
+        public string IdAsString { get => Id.ToString(); set => Id = int.Parse(value); }
+
         /// <summary>
         /// id added for admind!
         /// </summary>
@@ -574,7 +577,7 @@ namespace Nop.Plugin.Api.DTOs.Products
                 _manufacturerIds = value;
             }
         }
-        
+
         [ImageCollectionValidation]
         [JsonProperty("images")]
         public List<ImageMappingDto> Images
@@ -693,7 +696,7 @@ namespace Nop.Plugin.Api.DTOs.Products
                 _tierPrices = value;
             }
         }
-        
+
         /// <summary>
         /// Tax category id
         /// </summary>

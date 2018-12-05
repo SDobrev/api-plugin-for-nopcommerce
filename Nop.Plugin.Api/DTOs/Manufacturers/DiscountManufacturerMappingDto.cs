@@ -9,6 +9,9 @@ namespace Nop.Plugin.Api.DTOs.Manufacturers
     //[Validator(typeof(ProductDtoValidator))]
     public class DiscountManufacturerMappingDto : BaseDto
     {
+        [JsonProperty("id")]
+        public string IdAsString { get => Id.ToString(); set => Id = int.Parse(value); }
+
         /// <summary>
         /// Gets or sets the discount identifier
         /// </summary>
