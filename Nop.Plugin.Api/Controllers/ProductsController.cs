@@ -456,6 +456,8 @@ namespace Nop.Plugin.Api.Controllers
                         ProductId = entityToUpdate.Id,
                         DisplayOrder = imageDto.Position
                     });
+
+                    _genericAttributeService.SaveAttribute(newPicture, "nop.product.image.recordid", imageDto.RecordId);
                 }
             }
         }

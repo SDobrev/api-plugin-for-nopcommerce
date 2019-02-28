@@ -306,6 +306,8 @@ namespace Nop.Plugin.Api.Helpers
 
                 if (imageDto != null)
                 {
+                    var recordId = _genericAttributeService.GetAttribute<int>(productPicture.Picture, "nop.product.image.recordid");
+
                     var productImageDto = new ImageMappingDto
                     {
                         Id = productPicture.Id,
@@ -314,8 +316,9 @@ namespace Nop.Plugin.Api.Helpers
                         Attachment = imageDto.Attachment,
                         Alt = productPicture.Picture.AltAttribute,
                         Title = productPicture.Picture.TitleAttribute,
-                        PictureId = productPicture.PictureId
-                };
+                        PictureId = productPicture.PictureId,
+                        RecordId = recordId
+                    };
 
                     productDto.Images.Add(productImageDto);
                 }

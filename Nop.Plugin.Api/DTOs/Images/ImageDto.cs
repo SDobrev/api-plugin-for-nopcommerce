@@ -23,5 +23,8 @@ namespace Nop.Plugin.Api.DTOs.Images
 
         [JsonProperty("title")]
         public string Title { get; set; }
+
+        [JsonProperty("record_id")]
+        public int RecordId { get; set; }
     }
 }
