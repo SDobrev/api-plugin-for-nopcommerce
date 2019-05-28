@@ -469,7 +469,10 @@ namespace Nop.Plugin.Api.Controllers
                 return;
 
             //If it has attributes, then stock should be managed by them
-            entityToUpdate.ManageInventoryMethod = ManageInventoryMethod.ManageStockByAttributes;
+
+            //Custom Modification "ManageInventoryMethod" will be set in the request body. 
+            //entityToUpdate.ManageInventoryMethod = ManageInventoryMethod.ManageStockByAttributes;
+
             entityToUpdate.AllowAddingOnlyExistingAttributeCombinations = true;
             entityToUpdate.DisplayStockAvailability = true;
 
