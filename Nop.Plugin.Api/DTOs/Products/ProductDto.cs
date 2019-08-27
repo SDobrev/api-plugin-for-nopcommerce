@@ -230,21 +230,30 @@ namespace Nop.Plugin.Api.DTOs.Products
         /// </summary>
         [JsonProperty("is_ship_enabled")]
         public bool? IsShipEnabled { get; set; }
+      
         /// <summary>
         /// Gets or sets a value indicating whether the entity is free shipping
         /// </summary>
         [JsonProperty("is_free_shipping")]
         public bool? IsFreeShipping { get; set; }
+      
         /// <summary>
         /// Gets or sets a value this product should be shipped separately (each item)
         /// </summary>
         [JsonProperty("ship_separately")]
         public bool? ShipSeparately { get; set; }
+      
         /// <summary>
         /// Gets or sets the additional shipping charge
         /// </summary>
         [JsonProperty("additional_shipping_charge")]
         public decimal? AdditionalShippingCharge { get; set; }
+
+        /// <summary>
+        /// Gets or sets a delivery date identifier
+        /// </summary>
+       [JsonProperty("delivery_date_id")]
+        public int? DeliveryDateId { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the product is marked as tax exempt
