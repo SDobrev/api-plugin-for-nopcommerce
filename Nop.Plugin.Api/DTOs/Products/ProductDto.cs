@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using FluentValidation.Attributes;
+﻿using FluentValidation.Attributes;
 using Newtonsoft.Json;
 using Nop.Core.Domain.Catalog;
 using Nop.Plugin.Api.Attributes;
@@ -9,6 +7,8 @@ using Nop.Plugin.Api.DTOs.Images;
 using Nop.Plugin.Api.DTOs.Languages;
 using Nop.Plugin.Api.DTOs.SpecificationAttributes;
 using Nop.Plugin.Api.Validators;
+using System;
+using System.Collections.Generic;
 
 namespace Nop.Plugin.Api.DTOs.Products
 {
@@ -271,7 +271,13 @@ namespace Nop.Plugin.Api.DTOs.Products
         /// Gets or sets a value indicating whether multiple warehouses are used for this product
         /// </summary>
         [JsonProperty("use_multiple_warehouses")]
-        public bool? UseMultipleWarehouses { get; set; }
+        public bool? UseMultipleWarehouses { get; set; }     
+        
+        /// <summary>
+        /// Gets or sets a warehouse identifier
+        /// </summary>
+        [JsonProperty("warehouse_id")]
+        public int? WarehouseId { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating how to manage inventory.
