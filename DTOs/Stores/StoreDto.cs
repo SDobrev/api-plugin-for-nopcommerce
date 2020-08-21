@@ -9,6 +9,9 @@ namespace Nop.Plugin.Api.DTO.Stores
     {
         private List<int> _languageIds;
 
+        [JsonProperty("id")]
+        public string IdAsString { get => Id.ToString(); set => Id = int.Parse(value); }
+
         /// <summary>
         /// Gets or sets the store name
         /// </summary>

@@ -18,7 +18,6 @@ using System.Net;
 
 namespace Nop.Plugin.Api.Controllers
 {
-
     public class LanguagesController : BaseApiController
     {
         private ILanguageService _languageService;

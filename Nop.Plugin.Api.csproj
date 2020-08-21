@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <OutputPath>..\..\Presentation\Nop.Web\Plugins\Nop.Plugin.Api\</OutputPath>
+    <OutputPath>..\Presentation\Nop.Web\Plugins\Nop.Plugin.Api\</OutputPath>
     <OutDir>$(OutputPath)</OutDir>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
@@ -18,7 +18,7 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <OutputPath>..\..\Presentation\Nop.Web\Plugins\Nop.Plugin.Api\</OutputPath>
+    <OutputPath>..\Presentation\Nop.Web\Plugins\Nop.Plugin.Api\</OutputPath>
     <OutDir>$(OutputPath)</OutDir>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
@@ -61,8 +61,8 @@
 
   </ItemGroup> 
   <ItemGroup>
-    <ProjectReference Include="..\..\Nop-4.3\Libraries\Nop.Core\Nop.Core.csproj" />
-    <ProjectReference Include="..\..\Nop-4.3\Presentation\Nop.Web.Framework\Nop.Web.Framework.csproj" />
+    <ProjectReference Include="..\Libraries\Nop.Core\Nop.Core.csproj" />
+    <ProjectReference Include="..\Presentation\Nop.Web.Framework\Nop.Web.Framework.csproj" />
   </ItemGroup> 
   <ItemGroup>
     <Folder Include="Configuration\" />

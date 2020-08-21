@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Text;
 using Nop.Core;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Orders;
@@ -32,10 +33,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using static Nop.Plugin.Api.Infrastructure.Constants;
+using Nop.Core.Domain.Shipping;
 
 namespace Nop.Plugin.Api.Controllers
 {
-
     public class OrdersController : BaseApiController
     {
         private readonly IOrderApiService _orderApiService;
@@ -271,12 +272,12 @@ namespace Nop.Plugin.Api.Controllers
                 var isValid = true;
 
                 isValid &= SetShippingOption(orderDelta.Dto.ShippingRateComputationMethodSystemName,
-                                             orderDelta.Dto.ShippingMethod,
-                                             orderDelta.Dto.StoreId ?? _storeContext.CurrentStore.Id,
-                                             customer,
-                                             BuildShoppingCartItemsFromOrderItemDtos(orderDelta.Dto.OrderItems.ToList(),
-                                                                                     customer.Id,
-                                                                                     orderDelta.Dto.StoreId ?? _storeContext.CurrentStore.Id));
+                                            orderDelta.Dto.ShippingMethod,
+                                            orderDelta.Dto.StoreId ?? _storeContext.CurrentStore.Id,
+                                            customer, 
+                                            BuildShoppingCartItemsFromOrderItemDtos(orderDelta.Dto.OrderItems.ToList(), 
+                                                                                    customer.Id, 
+                                                                                    orderDelta.Dto.StoreId ?? _storeContext.CurrentStore.Id));
 
                 if (!isValid)
                 {
@@ -430,11 +431,88 @@ namespace Nop.Plugin.Api.Controllers
             return new RawJsonActionResult(json);
         }
 
-        private bool SetShippingOption(string shippingRateComputationMethodSystemName, 
-            string shippingOptionName, 
-            int storeId,
-            Customer customer, 
-            List<ShoppingCartItem> shoppingCartItems)
+        [HttpPost]
+        [Route("/api/orders/capture")]
+        [ProducesResponseType(typeof(OrdersRootObject), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(string), (int)HttpStatusCode.Unauthorized)]
+        [ProducesResponseType(typeof(ErrorsRootObject), (int)HttpStatusCode.BadRequest)]
+        [ProducesResponseType(typeof(string), (int)HttpStatusCode.NotFound)]
+        [ProducesResponseType(typeof(ErrorsRootObject), 422)]
+        public IActionResult CaptureOrder([ModelBinder(typeof(JsonModelBinder<OrderCaptureDto>))] Delta<OrderCaptureDto> order)
+        {
+            if (order.Dto.Id <= 0)
+            {
+                return Error(HttpStatusCode.BadRequest, "id", "invalid id");
+            }
+            var orderCaptureRootObject = new OrdersCaptureRootObject();
+            Order orderToCapture = _orderApiService.GetOrderById(order.Dto.Id);
+
+            if (orderToCapture == null)
+            {
+                return Error(HttpStatusCode.NotFound, "order", "not found");
+            }
+            var orderNote = LocalizationService.GetResource("Plugins.Api.Orders.Capture");
+            var captureStatus = "OK";
+            var sb = new StringBuilder();
+            var orderCaptured = false;
+            if (order.Dto.Amount < orderToCapture.OrderTotal || order.Dto.Amount < orderToCapture.OrderTotal)
+            {
+                captureStatus = LocalizationService.GetResource("Plugins.Api.Orders.CaptureStatus.Error");
+                var messageText = $"Beløbet ({order.Dto.Amount.ToString()}) i Admind matcher ikke beløbet i webordren. Tryk på Ordredetaljer for at rette totalerne i nopShop";
+                orderCaptureRootObject.Messages.Add(new OrdersCaptureRootObject.Message { MessageType = "Error", MessageText = messageText });
+            }
+            else
+            {
+                orderCaptured = _orderProcessingService.CanCapture(orderToCapture);
+                if (orderCaptured)
+                {
+                    orderToCapture.ShippingStatus = ShippingStatus.Shipped;
+                    var errors = _orderProcessingService.Capture(orderToCapture);
+
+                    if (errors.Count > 0)
+                    {
+                        orderCaptured = false;
+                        captureStatus = LocalizationService.GetResource("Plugins.Api.Orders.CaptureStatus.Error");
+                        orderCaptureRootObject.Messages.Add(new OrdersCaptureRootObject.Message { MessageType = "Error", MessageText = $"NopCommerce capture errors: {string.Join(";", errors)}" });
+                        orderCaptureRootObject.Captured = false;
+                        sb.AppendLine(string.Format(orderNote, captureStatus));
+                    }
+                    else
+                    {
+                        orderCaptured = true;
+                        captureStatus = LocalizationService.GetResource("Plugins.Api.Orders.CaptureStatus.Ok");
+                        orderCaptureRootObject.Messages.Add(new OrdersCaptureRootObject.Message { MessageType = "Info", MessageText = $"Capture succesful" });
+                        orderCaptureRootObject.Captured = true;
+                        sb.AppendLine(string.Format(orderNote, captureStatus));
+                    }
+
+                    CustomerActivityService.InsertActivity("EditOrder", LocalizationService.GetResource("ActivityLog.EditOrder"), orderToCapture);
+                }
+                else
+                {
+                    captureStatus = LocalizationService.GetResource("Plugins.Api.Orders.CaptureStatus.Error");
+                    sb.AppendLine(string.Format(orderNote, captureStatus));
+                    orderCaptureRootObject.Messages.Add(new OrdersCaptureRootObject.Message { MessageType = "Error", MessageText = $"NopCommerce capture error. Order not capturable, check order and payment status: " });
+                    orderCaptureRootObject.Captured = false;
+                    sb.AppendLine(LocalizationService.GetResource("Plugins.Api.Orders.CaptureStatus.CannotCapture"));
+                }
+            }
+
+            // order note update
+            _orderService.InsertOrderNote(new OrderNote()
+            {
+                OrderId = orderToCapture.Id,
+                Note = sb.ToString(),
+                DisplayToCustomer = false,
+                CreatedOnUtc = DateTime.UtcNow
+            });
+
+            _orderProcessingService.CheckOrderStatus(orderToCapture);
+
+            return Ok(orderCaptureRootObject);
+        }
+
+        private bool SetShippingOption(string shippingRateComputationMethodSystemName, string shippingOptionName, int storeId, Customer customer, List<ShoppingCartItem> shoppingCartItems)
         {
             var isValid = true;
 

@@ -193,17 +193,24 @@ namespace Nop.Plugin.Api.Controllers
             }
 
             var mappingsCount = _productCategoryMappingsService.GetMappingsCount(product.Id, category.Id);
-
-            if (mappingsCount > 0)
+            
+            ProductCategory newProductCategory = new ProductCategory();
+            productCategoryDelta.Merge(newProductCategory);
+            
+            if (mappingsCount == 0)
             {
-                return Error(HttpStatusCode.BadRequest, "product_category_mapping", "already exist");
+                _categoryService.InsertProductCategory(newProductCategory);
+                CustomerActivityService.InsertActivity("AddNewProductCategoryMapping", LocalizationService.GetResource("ActivityLog.AddNewProductCategoryMapping"), newProductCategory);
+                //return Error(HttpStatusCode.BadRequest, "product_category_mapping", "already exist");
+            }
+            else
+            {
+                var mapping = _productCategoryMappingsService.GetMappings(product.Id, category.Id);
+                newProductCategory.Id = mapping.FirstOrDefault().Id;
             }
 
-            var newProductCategory = new ProductCategory();
-            productCategoryDelta.Merge(newProductCategory);
-
             //inserting new category
-            _categoryService.InsertProductCategory(newProductCategory);
+            //_categoryService.InsertProductCategory(newProductCategory);
 
             // Preparing the result dto of the new product category mapping
             var newProductCategoryMappingDto = newProductCategory.ToDto();

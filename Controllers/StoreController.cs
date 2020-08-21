@@ -18,8 +18,6 @@ using Nop.Services.Stores;
 
 namespace Nop.Plugin.Api.Controllers
 {
-
-    //[ApiAuthorize(Policy = JwtBearerDefaults.AuthenticationScheme, AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class StoreController : BaseApiController
     {
         private readonly IStoreContext _storeContext;

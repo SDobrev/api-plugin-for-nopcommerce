@@ -1,10 +1,10 @@
 ﻿using Newtonsoft.Json;
 using Nop.Plugin.Api.DTO.Base;
+using System.Collections.Generic;
 
 namespace Nop.Plugin.Api.DTO.Products
 {
     [JsonObject(Title = "product_attribute_combination")]
-    //[Validator(typeof(ProductAttributeCombinationDtoValidator))]
     public class ProductAttributeCombinationDto : BaseDto
     {
         /// <summary>
@@ -24,6 +24,12 @@ namespace Nop.Plugin.Api.DTO.Products
         /// </summary>
         [JsonProperty("stock_quantity")]
         public int StockQuantity { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to allow orders when out of stock
+        /// </summary>
+        [JsonProperty("allow_out_of_stock_orders")]
+        public bool AllowOutOfStockOrders { get; set; }
 
         /// <summary>
         /// Gets or sets the SKU
@@ -50,9 +56,21 @@ namespace Nop.Plugin.Api.DTO.Products
         public decimal? OverriddenPrice { get; set; }
 
         /// <summary>
-        /// Gets or sets the identifier of picture associated with this combination
+        /// Gets or sets the quantity when admin should be notified
         /// </summary>
-        [JsonProperty("picture_id")]
-        public int PictureId { get; set; }
+        [JsonProperty("notify_admin_for_quantity_below")]
+        public int NotifyAdminForQuantityBelow { get; set; }
+
+        /// <summary>
+        /// Gets or sets the records
+        /// </summary>
+        [JsonProperty("records")]
+        public List<int> Records { get; set; }
+
+        /// <summary>
+        /// Admind's Combination ID!
+        /// </summary>
+        [JsonProperty("admind_combination_id")]
+        public int AdmindCombinationId { get; set; }
     }
 }

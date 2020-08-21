@@ -26,6 +26,17 @@ namespace Nop.Plugin.Api.DTO.Products
         private List<ProductSpecificationAttributeDto> _productSpecificationAttributes;
         private List<int> _associatedProductIds;
         private List<string> _tags;
+        private List<TierPriceDto> _tierPrices;
+        private List<ProductGenericAttributeDto> _productGenericAttributes;
+
+        [JsonProperty("id")]
+        public string IdAsString { get => Id.ToString(); set => Id = int.Parse(value); }
+
+        /// <summary>
+        /// id added for admind!
+        /// </summary>
+        [JsonProperty("admind_id")]
+        public int AdmindId { get; set; }
 
         /// <summary>
         /// Gets or sets the values indicating whether this product is visible in catalog or search results.
@@ -217,16 +228,19 @@ namespace Nop.Plugin.Api.DTO.Products
         /// </summary>
         [JsonProperty("is_ship_enabled")]
         public bool? IsShipEnabled { get; set; }
+      
         /// <summary>
         /// Gets or sets a value indicating whether the entity is free shipping
         /// </summary>
         [JsonProperty("is_free_shipping")]
         public bool? IsFreeShipping { get; set; }
+      
         /// <summary>
         /// Gets or sets a value this product should be shipped separately (each item)
         /// </summary>
         [JsonProperty("ship_separately")]
         public bool? ShipSeparately { get; set; }
+      
         /// <summary>
         /// Gets or sets the additional shipping charge
         /// </summary>
@@ -234,18 +248,16 @@ namespace Nop.Plugin.Api.DTO.Products
         public decimal? AdditionalShippingCharge { get; set; }
 
         /// <summary>
+        /// Gets or sets a delivery date identifier
+        /// </summary>
+       [JsonProperty("delivery_date_id")]
+        public int? DeliveryDateId { get; set; }
+
+        /// <summary>
         /// Gets or sets a value indicating whether the product is marked as tax exempt
         /// </summary>
         [JsonProperty("is_tax_exempt")]
         public bool? IsTaxExempt { get; set; }
-
-
-        /// <summary>
-        /// Gets or sets the tax category identifier
-        /// </summary>
-        [JsonProperty("tax_category_id")]
-        public int TaxCategoryId { get; set; }
-
 
         /// <summary>
         /// Gets or sets a value indicating whether the product is telecommunications or broadcasting or electronic services
@@ -257,7 +269,13 @@ namespace Nop.Plugin.Api.DTO.Products
         /// Gets or sets a value indicating whether multiple warehouses are used for this product
         /// </summary>
         [JsonProperty("use_multiple_warehouses")]
-        public bool? UseMultipleWarehouses { get; set; }
+        public bool? UseMultipleWarehouses { get; set; }     
+        
+        /// <summary>
+        /// Gets or sets a warehouse identifier
+        /// </summary>
+        [JsonProperty("warehouse_id")]
+        public int? WarehouseId { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating how to manage inventory.
@@ -362,6 +380,7 @@ namespace Nop.Plugin.Api.DTO.Products
         /// </summary>
         [JsonProperty("product_cost")]
         public decimal? ProductCost { get; set; }
+        /*
         /// <summary>
         /// Gets or sets the product special price
         /// </summary>
@@ -377,9 +396,11 @@ namespace Nop.Plugin.Api.DTO.Products
         /// </summary>
         [JsonProperty("special_price_end_date_time_utc")]
         public DateTime? SpecialPriceEndDateTimeUtc { get; set; }
+        */
         /// <summary>
         /// Gets or sets a value indicating whether a customer enters price
         /// </summary>
+        /// 
         [JsonProperty("customer_enters_price")]
         public bool? CustomerEntersPrice { get; set; }
         /// <summary>
@@ -569,7 +590,7 @@ namespace Nop.Plugin.Api.DTO.Products
                 _manufacturerIds = value;
             }
         }
-        
+
         [ImageCollectionValidation]
         [JsonProperty("images")]
         public List<ImageMappingDto> Images
@@ -597,7 +618,7 @@ namespace Nop.Plugin.Api.DTO.Products
             }
         }
 
-        [JsonProperty("product_attribute_combinations")]
+        [JsonProperty("attribute_combinations")]
         public List<ProductAttributeCombinationDto> ProductAttributeCombinations
         {
             get
@@ -609,7 +630,6 @@ namespace Nop.Plugin.Api.DTO.Products
                 _productAttributeCombinations = value;
             }
         }
-
 
         [JsonProperty("product_specification_attributes")]
         public List<ProductSpecificationAttributeDto> ProductSpecificationAttributes
@@ -656,5 +676,61 @@ namespace Nop.Plugin.Api.DTO.Products
 
         [JsonProperty("se_name")]
         public string SeName { get; set; }
+
+        /*EXTRA*/
+        /// <summary>
+        /// 
+        /// </summary>
+        [JsonProperty("mark_as_new")]
+        public bool MarkAsNew { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [JsonProperty("mark_as_new_start_datetimeutc")]
+        public DateTime? MarkAsNewStartDateTimeUtc { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        [JsonProperty("mark_as_new_end_datetimeutc")]
+        public DateTime? MarkAsNewEndDateTimeUtc { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>        
+        [JsonProperty("tierprices")]
+        public List<TierPriceDto> DtoTierPrices
+        {
+            get
+            {
+                return _tierPrices;
+    }
+            set
+            {
+                _tierPrices = value;
+            }
+        }
+
+        /// <summary>
+        /// Tax category id
+        /// </summary>
+        [JsonProperty("tax_category_id")]
+        public int? TaxCategoryId { get; set; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [JsonProperty("generic_attributes")]
+        public List<ProductGenericAttributeDto> DtoGenericAttributes
+        {
+            get
+            {
+                return _productGenericAttributes;
+            }
+
+            set
+            {
+                _productGenericAttributes = value;
+            }
+        }
     }
 }

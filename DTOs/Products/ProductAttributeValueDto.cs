@@ -10,6 +10,9 @@ namespace Nop.Plugin.Api.DTO.Products
     //[Validator(typeof(ProductDtoValidator))]
     public class ProductAttributeValueDto : BaseDto
     {
+        [JsonProperty("id")]
+        public string IdAsString { get => Id.ToString(); set => Id = int.Parse(value); }
+
         /// <summary>
         /// Gets or sets the attribute value type identifier
         /// </summary>
@@ -104,5 +107,11 @@ namespace Nop.Plugin.Api.DTO.Products
                 }
             }
         }
+
+        /// <summary>
+        /// Gets or sets the product attribute value id
+        /// </summary>
+        [JsonProperty("record_id")]
+        public int RecordId { get; set; }
     }
 }

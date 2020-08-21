@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Nop.Core.Domain.Catalog;
+using Nop.Core.Domain.Common;
 using Nop.Core.Domain.Discounts;
+using Nop.Data;
 using Nop.Plugin.Api.Attributes;
 using Nop.Plugin.Api.Delta;
 using Nop.Plugin.Api.DTO.Errors;
@@ -14,6 +16,7 @@ using Nop.Plugin.Api.ModelBinders;
 using Nop.Plugin.Api.Models.ProductsParameters;
 using Nop.Plugin.Api.Services;
 using Nop.Services.Catalog;
+using Nop.Services.Common;
 using Nop.Services.Customers;
 using Nop.Services.Discounts;
 using Nop.Services.Localization;
@@ -41,6 +44,11 @@ namespace Nop.Plugin.Api.Controllers
         private readonly IProductAttributeService _productAttributeService;
         private readonly IDTOHelper _dtoHelper;
         private readonly ILogger _logger;
+        private readonly IGenericAttributeService _genericAttributeService;
+        private readonly IRepository<GenericAttribute> _genericAttributeRepository;
+        private readonly IRepository<ProductAttributeCombination> _productAttributeCombinationRepository;
+        private readonly IRepository<Product> _productRepository;
+        private readonly IProductAttributeParser _productAttributeParser;
 
         public ProductsController(IProductApiService productApiService,
                                   IJsonFieldsSerializer jsonFieldsSerializer,
@@ -58,8 +66,12 @@ namespace Nop.Plugin.Api.Controllers
                                   IManufacturerService manufacturerService,
                                   IProductTagService productTagService,
                                   IProductAttributeService productAttributeService,
+                                  IDTOHelper dtoHelper,
                                   ILogger logger,
-                                  IDTOHelper dtoHelper) : base(jsonFieldsSerializer, aclService, customerService, storeMappingService, storeService, discountService, customerActivityService, localizationService, pictureService)
+                                  IGenericAttributeService genericAttributeService,
+                                  IRepository<GenericAttribute> genericAttributeRepository,
+                                  IProductAttributeParser productAttributeParser, IRepository<ProductAttributeCombination> productAttributeCombinationRepository, IRepository<Product> productRepository)
+            : base(jsonFieldsSerializer, aclService, customerService, storeMappingService, storeService, discountService, customerActivityService, localizationService, pictureService)
         {
             _productApiService = productApiService;
             _factory = factory;
@@ -70,6 +82,11 @@ namespace Nop.Plugin.Api.Controllers
             _productAttributeService = productAttributeService;
             _logger = logger;
             _dtoHelper = dtoHelper;
+            _genericAttributeService = genericAttributeService;
+            _genericAttributeRepository = genericAttributeRepository;
+            _productAttributeParser = productAttributeParser;
+            _productAttributeCombinationRepository = productAttributeCombinationRepository;
+            _productRepository = productRepository;
         }
 
         /// <summary>
@@ -98,8 +115,7 @@ namespace Nop.Plugin.Api.Controllers
 
             var allProducts = _productApiService.GetProducts(parameters.Ids, parameters.CreatedAtMin, parameters.CreatedAtMax, parameters.UpdatedAtMin,
                                                                         parameters.UpdatedAtMax, parameters.Limit, parameters.Page, parameters.SinceId, parameters.CategoryId,
-                                                                        parameters.VendorName, parameters.PublishedStatus)
-                                                .Where(p => StoreMappingService.Authorize(p));
+                                                                        parameters.VendorName, parameters.PublishedStatus);
 
             IList<ProductDto> productsAsDtos = allProducts.Select(product => _dtoHelper.PrepareProductDTO(product)).ToList();
 
@@ -168,6 +184,7 @@ namespace Nop.Plugin.Api.Controllers
             }
 
             var productDto = _dtoHelper.PrepareProductDTO(product);
+            productDto.AdmindId = _genericAttributeService.GetAttribute<int>(product, "nop.product.admindid");
 
             var productsRootObject = new ProductsRootObjectDto();
 
@@ -185,51 +202,78 @@ namespace Nop.Plugin.Api.Controllers
         [ProducesResponseType(typeof(ErrorsRootObject), 422)]
         public IActionResult CreateProduct([ModelBinder(typeof(JsonModelBinder<ProductDto>))] Delta<ProductDto> productDelta)
         {
-            // Here we display the errors if the validation has failed at some point.
-            if (!ModelState.IsValid)
+            var genricAttribute = _genericAttributeRepository.Table.Where(g => g.Key == "nop.product.admindid" && g.Value == productDelta.Dto.AdmindId.ToString()).FirstOrDefault();
+
+            Product product = null;
+            if (genricAttribute == null)
             {
-                return Error();
+                // Here we display the errors if the validation has failed at some point.
+                if (!ModelState.IsValid)
+                {
+                    return Error();
+                }
+
+                // Inserting the new product
+                product = _factory.Initialize();
+
+                productDelta.Merge(product);
+
+                _productService.InsertProduct(product);
+
+                UpdateProductPictures(product, productDelta.Dto.Images);
+
+                UpdateProductTags(product, productDelta.Dto.Tags);
+
+                UpdateProductManufacturers(product, productDelta.Dto.ManufacturerIds);
+
+                UpdateAssociatedProducts(product, productDelta.Dto.AssociatedProductIds);
+                /*EXTRA*/
+                UpdateProductAttributes(product, productDelta);
+
+                UpdateProductAttributeCombinations(product, productDelta.Dto.ProductAttributeCombinations);
+
+                UpdateProductTirePrices(product, productDelta.Dto.DtoTierPrices);
+
+                UpdateProductGenericAttributes(product, productDelta.Dto.DtoGenericAttributes);
+
+                _genericAttributeService.SaveAttribute<int>(product, "nop.product.admindid", productDelta.Dto.AdmindId);
+                /*EXTRA*/
+
+                //search engine name
+                var seName = _urlRecordService.ValidateSeName(product, productDelta.Dto.SeName, product.Name, true);
+                _urlRecordService.SaveSlug(product, seName, 0);
+
+                UpdateAclRoles(product, productDelta.Dto.RoleIds);
+
+                UpdateDiscountMappings(product, productDelta.Dto.DiscountIds);
+
+                UpdateStoreMappings(product, productDelta.Dto.StoreIds);
+
+                _productService.UpdateProduct(product);
+
+                CustomerActivityService.InsertActivity("APIService", LocalizationService.GetResource("ActivityLog.AddNewProduct"), product);
+            }
+            else
+            {
+                product = _productService.GetProductById(genricAttribute.EntityId);
             }
 
-            CustomerActivityService.InsertActivity("APIService", "Starting Product Create", null);
-
-            // Inserting the new product
-            var product = _factory.Initialize();
-            productDelta.Merge(product);
-            
-            _productService.InsertProduct(product);
-
-            UpdateProductPictures(product, productDelta.Dto.Images);
-
-            UpdateProductTags(product, productDelta.Dto.Tags);
-
-            UpdateProductManufacturers(product, productDelta.Dto.ManufacturerIds);
-
-            UpdateAssociatedProducts(product, productDelta.Dto.AssociatedProductIds);
-
-            //search engine name
-            var seName = _urlRecordService.ValidateSeName(product, productDelta.Dto.SeName, product.Name, true);
-            _urlRecordService.SaveSlug(product, seName, 0);
-
-            UpdateAclRoles(product, productDelta.Dto.RoleIds);
-
-            UpdateDiscountMappings(product, productDelta.Dto.DiscountIds);
-
-            UpdateStoreMappings(product, productDelta.Dto.StoreIds);
-
-            _productService.UpdateProduct(product);
-
-            CustomerActivityService.InsertActivity("APIService", LocalizationService.GetResource("ActivityLog.AddNewProduct"), product);
+            if (product == null)
+                return Error(HttpStatusCode.Conflict, "product", "could not find product!");
 
             // Preparing the result dto of the new product
             var productDto = _dtoHelper.PrepareProductDTO(product);
+
+            /*EXTRA*/
+            productDto.AdmindId = _genericAttributeService.GetAttribute<int>(product, "nop.product.admindid");
+            /*EXTRA*/
 
             var productsRootObject = new ProductsRootObjectDto();
 
             productsRootObject.Products.Add(productDto);
 
             var json = JsonFieldsSerializer.Serialize(productsRootObject, string.Empty);
-            
+
             return new RawJsonActionResult(json);
         }
 
@@ -256,12 +300,24 @@ namespace Nop.Plugin.Api.Controllers
                 return Error(HttpStatusCode.NotFound, "product", "not found");
             }
 
+            /*EXTRA*/
+            /*
+            var admindid = product.GetAttribute<int>("nop.product.admindid");
+            if (admindid != productDelta.Dto.AdmindId)
+                return Error(HttpStatusCode.Conflict, "admind", "does not match!");
+            */
+            UpdateProductTirePrices(product, productDelta.Dto.DtoTierPrices);
+            UpdateProductGenericAttributes(product, productDelta.Dto.DtoGenericAttributes);
+            /*EXTRA*/
+
             productDelta.Merge(product);
 
             product.UpdatedOnUtc = DateTime.UtcNow;
             _productService.UpdateProduct(product);
 
             UpdateProductAttributes(product, productDelta);
+
+            UpdateProductAttributeCombinations(product, productDelta.Dto.ProductAttributeCombinations);
 
             UpdateProductPictures(product, productDelta.Dto.Images);
 
@@ -286,7 +342,8 @@ namespace Nop.Plugin.Api.Controllers
 
             _productService.UpdateProduct(product);
 
-            CustomerActivityService.InsertActivity("APIService", LocalizationService.GetResource("ActivityLog.UpdateProduct"), product);
+            CustomerActivityService.InsertActivity("UpdateProduct",
+               LocalizationService.GetResource("ActivityLog.UpdateProduct"), product);
 
             // Preparing the result dto of the new product
             var productDto = _dtoHelper.PrepareProductDTO(product);
@@ -321,12 +378,48 @@ namespace Nop.Plugin.Api.Controllers
                 return Error(HttpStatusCode.NotFound, "product", "not found");
             }
 
+            var genericAttribute = _genericAttributeService.GetAttributesForEntity(product.Id, "Product").FirstOrDefault();
+            if (genericAttribute != null)
+                _genericAttributeService.DeleteAttribute(genericAttribute);
+
             _productService.DeleteProduct(product);
 
             //activity log
-            CustomerActivityService.InsertActivity("APIService", string.Format(LocalizationService.GetResource("ActivityLog.DeleteProduct"), product.Name), product);
+            CustomerActivityService.InsertActivity("DeleteProduct",
+                string.Format(LocalizationService.GetResource("ActivityLog.DeleteProduct"), product.Name), product);
 
             return new RawJsonActionResult("{}");
+        }
+
+        private void UpdateProductGenericAttributes(Product entityToUpdate, List<ProductGenericAttributeDto> dtoGenericAttributes)
+        {
+            if (dtoGenericAttributes == null)
+                return;
+
+            var attributes = new List<GenericAttribute>();
+            // IF LIST IS EMPTY DELETE ALL GENERIC ATTRIBUTES!
+            if (dtoGenericAttributes.Count == 0)
+            {
+                attributes = _genericAttributeService.GetAttributesForEntity(entityToUpdate.Id, "Product").ToList();
+                attributes = attributes.Where(a => a.Key != "nop.product.admindid" && a.Key != "nop.product.attributevalue.recordid" && a.Key != "nop.product.attribute.combination.records" && a.Key != "nop.product.attribute.combination.admind_id").ToList();
+                _genericAttributeService.DeleteAttributes(attributes);
+            }
+
+            var attribute = new GenericAttribute();
+            foreach (var ga in dtoGenericAttributes)
+            {
+                var key = string.Format("nop.product.{0}", ga.Name);
+                attribute = attributes.Where(a => a.Key == key).FirstOrDefault();
+                if (attribute == null)
+                {
+                    _genericAttributeService.SaveAttribute<string>(entityToUpdate, key, ga.Value);
+                }
+                else
+                {
+                    attribute.Value = ga.Value;
+                    _genericAttributeService.UpdateAttribute(attribute);
+                }
+            }
         }
 
         private void UpdateProductPictures(Product entityToUpdate, List<ImageMappingDto> setPictures)
@@ -365,8 +458,8 @@ namespace Nop.Plugin.Api.Controllers
                 else
                 {
                     // add new product picture
-                    var newPicture = PictureService.InsertPicture(imageDto.Binary, imageDto.MimeType, string.Empty);
-                    _productService.InsertProductPicture(new ProductPicture
+                    var newPicture = PictureService.InsertPicture(imageDto.Binary, imageDto.MimeType, string.Empty, imageDto.Alt, imageDto.Title);
+                    _productService.InsertProductPicture(new ProductPicture()
                     {
                         PictureId = newPicture.Id,
                         ProductId = entityToUpdate.Id,
@@ -379,13 +472,52 @@ namespace Nop.Plugin.Api.Controllers
         {
             // If no product attribute mappings are specified means we don't have to update anything
             if (productDtoDelta.Dto.ProductAttributeMappings == null)
-            {
                 return;
-            }
+
+            //If it has attributes, then stock should be managed by them
+            entityToUpdate.ManageInventoryMethod = ManageInventoryMethod.ManageStockByAttributes;
+            entityToUpdate.AllowAddingOnlyExistingAttributeCombinations = true;
+            entityToUpdate.DisplayStockAvailability = true;
+
+            var productAttributeMappings = _productAttributeService.GetProductAttributeMappingsByProductId(entityToUpdate.Id);
 
             // delete unused product attribute mappings
-            var toBeUpdatedIds = productDtoDelta.Dto.ProductAttributeMappings.Where(y => y.Id != 0).Select(x => x.Id);
-            var productAttributeMappings = _productAttributeService.GetProductAttributeMappingsByProductId(entityToUpdate.Id);
+            var toBeUpdatedIds = new List<int>();
+            var useRecordMappings = false;
+            foreach (var entityToUpdateMapping in productAttributeMappings)
+            {
+                var productAttributeValues = _productAttributeService.GetProductAttributeValues(entityToUpdateMapping.Id);
+
+                var entityRecords = productAttributeValues.Select(v => _genericAttributeService.GetAttribute<int>(v, "nop.product.attributevalue.recordid"));
+
+                if (entityRecords.Count() > 0)
+                {
+                    useRecordMappings = true;
+
+                    foreach (var deltaMapping in productDtoDelta.Dto.ProductAttributeMappings)
+                    {
+                        var values = deltaMapping.ProductAttributeValues.Where(v => entityRecords.Contains(v.RecordId));
+                        if (values != null && values.Count() != 0 && deltaMapping.Id == 0)
+                        {
+                            toBeUpdatedIds.Add(entityToUpdateMapping.Id);
+                            deltaMapping.Id = entityToUpdateMapping.Id;
+
+                            foreach (var entityValue in productAttributeValues)
+                            {
+                                var deltaValue = deltaMapping.ProductAttributeValues.Where(dv => dv.RecordId == _genericAttributeService.GetAttribute<int>(entityValue, "nop.product.attributevalue.recordid")).FirstOrDefault();
+                                if (deltaValue != null)
+                                    deltaValue.Id = entityValue.Id;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (!useRecordMappings)
+            {
+                toBeUpdatedIds = productDtoDelta.Dto.ProductAttributeMappings.Where(y => y.Id != 0).Select(x => x.Id).ToList();
+            }
+
             var unusedProductAttributeMappings = productAttributeMappings.Where(x => !toBeUpdatedIds.Contains(x.Id)).ToList();
 
             foreach (var unusedProductAttributeMapping in unusedProductAttributeMappings)
@@ -393,6 +525,7 @@ namespace Nop.Plugin.Api.Controllers
                 _productAttributeService.DeleteProductAttributeMapping(unusedProductAttributeMapping);
             }
 
+            // delete unused product attribute mappings
             foreach (var productAttributeMappingDto in productDtoDelta.Dto.ProductAttributeMappings)
             {
                 if (productAttributeMappingDto.Id > 0)
@@ -401,6 +534,8 @@ namespace Nop.Plugin.Api.Controllers
                     var productAttributeMappingToUpdate = productAttributeMappings.FirstOrDefault(x => x.Id == productAttributeMappingDto.Id);
                     if (productAttributeMappingToUpdate != null)
                     {
+                        productAttributeMappingToUpdate.AttributeControlTypeId = 1;
+
                         productDtoDelta.Merge(productAttributeMappingDto, productAttributeMappingToUpdate, false);
 
                         _productAttributeService.UpdateProductAttributeMapping(productAttributeMappingToUpdate);
@@ -412,13 +547,29 @@ namespace Nop.Plugin.Api.Controllers
                 {
                     var newProductAttributeMapping = new ProductAttributeMapping
                     {
-                        ProductId = entityToUpdate.Id
+                        ProductId = entityToUpdate.Id,
+                        AttributeControlTypeId = 1
                     };
 
                     productDtoDelta.Merge(productAttributeMappingDto, newProductAttributeMapping);
 
                     // add new product attribute
                     _productAttributeService.InsertProductAttributeMapping(newProductAttributeMapping);
+                    productAttributeMappingDto.Id = newProductAttributeMapping.Id;
+
+                    var productAttributeValues = _productAttributeService.GetProductAttributeValues(newProductAttributeMapping.Id);
+
+                    for (int i = 0; i < productAttributeValues.Count; i++)
+                    {
+                        var attributeValue = productAttributeValues.ElementAt(i);
+                        var dtoAttributeValue = productAttributeMappingDto.ProductAttributeValues.ElementAt(i);
+                        if (dtoAttributeValue.ProductPictureId.HasValue)
+                            attributeValue.PictureId = dtoAttributeValue.ProductPictureId.Value;
+                        else
+                            attributeValue.PictureId = 0;
+
+                        _genericAttributeService.SaveAttribute(attributeValue, "nop.product.attributevalue.recordid", dtoAttributeValue.RecordId);
+                    }
                 }
             }
         }
@@ -445,11 +596,15 @@ namespace Nop.Plugin.Api.Controllers
                 if (productAttributeValueDto.Id > 0)
                 {
                     // update existing product attribute mapping
-                    var productAttributeValueToUpdate =
-                        _productAttributeService.GetProductAttributeValueById(productAttributeValueDto.Id);
+                    var productAttributeValueToUpdate = _productAttributeService.GetProductAttributeValueById(productAttributeValueDto.Id);
+                    //var recordId = productAttributeValueToUpdate.GetAttribute<int>("nop.product.attributevalue.recordid");
                     if (productAttributeValueToUpdate != null)
                     {
                         productDtoDelta.Merge(productAttributeValueDto, productAttributeValueToUpdate, false);
+                        if (productAttributeValueDto.ProductPictureId.HasValue)
+                            productAttributeValueToUpdate.PictureId = productAttributeValueDto.ProductPictureId.Value;
+                        else
+                            productAttributeValueToUpdate.PictureId = 0;
 
                         _productAttributeService.UpdateProductAttributeValue(productAttributeValueToUpdate);
                     }
@@ -462,6 +617,86 @@ namespace Nop.Plugin.Api.Controllers
                     newProductAttributeValue.ProductAttributeMappingId = productAttributeMappingDto.Id;
                     // add new product attribute value
                     _productAttributeService.InsertProductAttributeValue(newProductAttributeValue);
+                    _genericAttributeService.SaveAttribute<int>(newProductAttributeValue, "nop.product.attributevalue.recordid", productAttributeValueDto.RecordId);
+                }
+            }
+        }
+
+        private void UpdateProductAttributeCombinations(Product product, List<ProductAttributeCombinationDto> productAttributeCombinations)
+        {
+            if (productAttributeCombinations == null)
+                return;
+
+            //TODO: 
+            var combinations = (from pac in _productAttributeCombinationRepository.Table
+                join p in _productRepository.Table on pac.ProductId equals p.Id
+                where p.Id == product.Id
+                orderby pac.ProductId, pac.Id
+                select pac).ToList();
+
+            // REMOVE OLD ProductAttributeCombinations! // IF ID IS NOT IN LIST THEN REMOVE!
+            if (combinations.Count > 0)
+            {
+                var ids = productAttributeCombinations.Select(c => c.Id).ToList();
+                var dataCombinations = new ProductAttributeCombination[combinations.Count];
+                combinations.CopyTo(dataCombinations, 0);
+
+                foreach (var combi in dataCombinations.Where(t => !ids.Contains(t.Id)))
+                {
+                    _productAttributeService.DeleteProductAttributeCombination(combi);
+                }
+            }
+
+            var attributesXml = "";
+            foreach (var combi in productAttributeCombinations)
+            {
+                attributesXml = string.Empty;
+                if (combi.Id == 0)
+                {
+                    for (int i = 0; i < combi.Records.Count; i++)
+                    {
+                        var productAttributeMappings = _productAttributeService.GetProductAttributeMappingsByProductId(product.Id);
+
+                        foreach (var mapping in productAttributeMappings)
+                        {
+                            var productAttributeValues = _productAttributeService.GetProductAttributeValues(mapping.Id);
+
+                            var mappingValue = productAttributeValues.FirstOrDefault(v => _genericAttributeService.GetAttribute<int>(v, "nop.product.attributevalue.recordid") == combi.Records[i]);
+                            if (mappingValue != null)
+                                attributesXml = _productAttributeParser.AddProductAttribute(attributesXml, mapping, mappingValue.Id.ToString());
+                        }
+                    }
+                    // OPRET NY COMBINATION
+                    var attributeCombi = new ProductAttributeCombination()
+                    {
+                        ProductId = product.Id,
+                        AttributesXml = attributesXml,
+                        Sku = combi.Sku,
+                        Gtin = combi.Gtin,
+                        StockQuantity = combi.StockQuantity,
+                        AllowOutOfStockOrders = combi.AllowOutOfStockOrders,
+                        ManufacturerPartNumber = combi.ManufacturerPartNumber,
+                        NotifyAdminForQuantityBelow = combi.NotifyAdminForQuantityBelow,
+                        OverriddenPrice = combi.OverriddenPrice
+                    };
+
+                    _productAttributeService.InsertProductAttributeCombination(attributeCombi);
+                    _genericAttributeService.SaveAttribute(attributeCombi, "nop.product.attribute.combination.records", combi.Records);
+                    _genericAttributeService.SaveAttribute(attributeCombi, "nop.product.attribute.combination.admind_id", combi.AdmindCombinationId);
+                }
+                else
+                {
+                    // OPDATERE COMBINATION
+                    var currentCombi = _productAttributeService.GetProductAttributeCombinationById(combi.Id);
+                    currentCombi.Gtin = combi.Gtin != currentCombi.Gtin ? combi.Gtin : currentCombi.Gtin;
+                    currentCombi.Sku = combi.Sku != currentCombi.Sku ? combi.Sku : currentCombi.Sku;
+                    currentCombi.StockQuantity = combi.StockQuantity != currentCombi.StockQuantity ? combi.StockQuantity : currentCombi.StockQuantity;
+                    currentCombi.AllowOutOfStockOrders = combi.AllowOutOfStockOrders != currentCombi.AllowOutOfStockOrders ? combi.AllowOutOfStockOrders : currentCombi.AllowOutOfStockOrders;
+                    currentCombi.ManufacturerPartNumber = combi.ManufacturerPartNumber != currentCombi.ManufacturerPartNumber ? combi.ManufacturerPartNumber : currentCombi.ManufacturerPartNumber;
+                    currentCombi.NotifyAdminForQuantityBelow = combi.NotifyAdminForQuantityBelow != currentCombi.NotifyAdminForQuantityBelow ? combi.NotifyAdminForQuantityBelow : currentCombi.NotifyAdminForQuantityBelow;
+                    currentCombi.OverriddenPrice = combi.OverriddenPrice != currentCombi.OverriddenPrice ? combi.OverriddenPrice : currentCombi.OverriddenPrice;
+
+                    _productAttributeService.UpdateProductAttributeCombination(currentCombi);
                 }
             }
         }
@@ -501,7 +736,7 @@ namespace Nop.Plugin.Api.Controllers
             }
 
             this._productTagService.UpdateProductTags(product, productTagsToRemove.Select(o => o.Name).ToArray());
-        
+
             foreach (var productTagName in productTags)
             {
                 ProductTag productTag;
@@ -530,6 +765,7 @@ namespace Nop.Plugin.Api.Controllers
                 });
             }
         }
+
         private void UpdateDiscountMappings(Product product, List<int> passedDiscountIds)
         {
             if (passedDiscountIds == null)
@@ -562,8 +798,6 @@ namespace Nop.Plugin.Api.Controllers
             _productService.UpdateProduct(product);
             _productService.UpdateHasDiscountsApplied(product);
         }
-
-
 
         private void UpdateProductManufacturers(Product product, List<int> passedManufacturerIds)
         {
@@ -622,6 +856,76 @@ namespace Nop.Plugin.Api.Controllers
                 newAssociatedProduct.ParentGroupedProductId = product.Id;
                 _productService.UpdateProduct(newAssociatedProduct);
             }
+        }
+
+        private void UpdateProductTirePrices(Product product, List<TierPriceDto> tierPrices)
+        {
+            if (tierPrices == null)
+                return;
+
+            var productTierPrices = _productService.GetTierPricesByProduct(product.Id);
+
+            if (tierPrices.Count == 0 && productTierPrices.Count == 0)
+                return;
+
+            // REMOVE OLD TIERPRICES! IF [] IS EMPTY!
+            if (tierPrices.Count == 0)
+            {
+                var dataTierPrices = new TierPrice[productTierPrices.Count];
+                productTierPrices.CopyTo(dataTierPrices, 0);
+                foreach (var tier in dataTierPrices)
+                {
+                    _productService.DeleteTierPrice(tier);
+                }
+                productTierPrices.Clear();
+                return;
+            }
+
+            // REMOVE OLD TIERPRICES! // IF ID IS NOT IN LIST THEN REMOVE!
+            if (productTierPrices.Count > 0)
+            {
+                var ids = tierPrices.Select(t => t.Id).ToList();
+                var dataTierPrices = new TierPrice[productTierPrices.Count];
+                productTierPrices.CopyTo(dataTierPrices, 0);
+
+                foreach (var tier in dataTierPrices.Where(t => !ids.Contains(t.Id)))
+                {
+                    _productService.DeleteTierPrice(tier);
+                }
+            }
+
+            foreach (var tp in tierPrices)
+            {
+                var tier = productTierPrices.Where(t => t.Id == tp.Id).FirstOrDefault();
+                if (tier == null)
+                {
+                    _productService.InsertTierPrice(new TierPrice()
+                    {
+                        ProductId = product.Id,
+                        StoreId = tp.StoreId,
+                        CustomerRoleId = tp.CustomerRoleId,
+                        Price = tp.Price,
+                        Quantity = tp.Quantity,
+                        StartDateTimeUtc = tp.StartDateTimeUtc.HasValue ? tp.StartDateTimeUtc.Value : (DateTime?)null,
+                        EndDateTimeUtc = tp.EndDateTimeUtc.HasValue ? tp.EndDateTimeUtc.Value : (DateTime?)null
+                    });
+                }
+                else
+                {
+                    if ((tp.Price != tier.Price && tp.Price > 0) || tp.StoreId != tier.StoreId || tp.CustomerRoleId.HasValue || tp.Quantity != tier.Quantity || tp.StartDateTimeUtc.HasValue || tp.EndDateTimeUtc.HasValue)
+                    {
+                        tier.Price = tp.Price;
+                        tier.Quantity = tp.Quantity;
+                        tier.StoreId = tp.StoreId;
+                        tier.CustomerRoleId = tp.CustomerRoleId.HasValue ? tp.CustomerRoleId.Value : tier.CustomerRoleId;
+                        tier.StartDateTimeUtc = tp.StartDateTimeUtc.HasValue ? tp.StartDateTimeUtc.Value : tier.StartDateTimeUtc;
+                        tier.EndDateTimeUtc = tp.EndDateTimeUtc.HasValue ? tp.EndDateTimeUtc.Value : tier.EndDateTimeUtc;
+
+                        _productService.UpdateTierPrice(tier);
+                    }
+                }
+            }
+            _productService.UpdateHasTierPricesProperty(product);
         }
     }
 }

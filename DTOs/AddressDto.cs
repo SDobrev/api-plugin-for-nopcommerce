@@ -8,6 +8,9 @@ namespace Nop.Plugin.Api.DTO
     //[Validator(typeof(AddressDtoValidator))]
     public class AddressDto : BaseDto
     {
+        [JsonProperty("id")]
+        public string IdAsString { get => Id.ToString(); set => Id = int.Parse(value); }
+
         /// <summary>
         /// Gets or sets the first name
         /// </summary>

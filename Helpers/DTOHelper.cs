@@ -41,6 +41,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using static Nop.Plugin.Api.Infrastructure.Constants;
+using Nop.Services.Common;
+using Nop.Services.Orders;
 
 namespace Nop.Plugin.Api.Helpers
 {
@@ -68,6 +70,8 @@ namespace Nop.Plugin.Api.Helpers
         private readonly IOrderService _orderService;
         private readonly IShipmentService _shipmentService;
         private readonly IAddressService _addressService;
+        private readonly ICheckoutAttributeParser _checkoutAttributeParser;
+        private readonly IGenericAttributeService _genericAttributeService;
 
         public DTOHelper(IProductService productService,
             IAclService aclService,
@@ -88,6 +92,8 @@ namespace Nop.Plugin.Api.Helpers
             IProductTagService productTagService,
             ITaxCategoryService taxCategoryService,
             ISettingService settingService,
+            IGenericAttributeService genericAttributeService,
+            ICheckoutAttributeParser checkoutAttributeParser,
             IShipmentService shipmentService,
             IOrderService orderService,
             IAddressService addressService)
@@ -114,6 +120,8 @@ namespace Nop.Plugin.Api.Helpers
             _orderService = orderService;
             _shipmentService = shipmentService;
             _addressService = addressService;
+            _genericAttributeService = genericAttributeService;
+            _checkoutAttributeParser = checkoutAttributeParser;
         }
 
         public ProductDto PrepareProductDTO(Product product)
@@ -153,8 +161,17 @@ namespace Nop.Plugin.Api.Helpers
                 productDto.LocalizedNames.Add(localizedNameDto);
             }
 
+            /*EXTRA*/
+            var attributeCombinations = _productAttributeService.GetAllProductAttributeCombinations(product.Id);
+            PrepareProductAttributeCombinations(attributeCombinations, productDto);
+            var tierPrices = _productService.GetTierPricesByProduct(product.Id);
+            PrepareProductTierPrices(tierPrices, productDto);
+            PrepareProductGenericAttributes(product, productDto);
+            /*EXTRA*/
+
             return productDto;
         }
+
         public ImageMappingDto PrepareProductPictureDTO(ProductPicture productPicture)
         {
             return PrepareProductImageDto(productPicture);
@@ -183,6 +200,55 @@ namespace Nop.Plugin.Api.Helpers
 
             return imageMapping;
         }
+
+        private void PrepareProductGenericAttributes(Product product, ProductDto productDto)
+        {
+            var attributes = _genericAttributeService.GetAttributesForEntity(product.Id, "Product");
+            attributes = attributes.Where(a => a.Key != "nop.product.admindid" && a.Key != "nop.product.attributevalue.recordid" && a.Key != "nop.product.attribute.combination.records" && a.Key != "nop.product.attribute.combination.admind_id").ToList();
+
+            productDto.DtoGenericAttributes = new List<ProductGenericAttributeDto>();
+            foreach (var attr in attributes)
+            {
+                productDto.DtoGenericAttributes.Add(new ProductGenericAttributeDto()
+                {
+                    Name = attr.Key.Replace("nop.product.", ""),
+                    Value = attr.Value
+                });
+            }
+        }
+
+        private void PrepareProductAttributeCombinations(ICollection<ProductAttributeCombination> productAttributeCombinations, ProductDto productDto)
+        {
+            if (productDto.ProductAttributeCombinations == null)
+                productDto.ProductAttributeCombinations = new List<ProductAttributeCombinationDto>();
+
+            foreach (var combination in productAttributeCombinations)
+            {
+                productDto.ProductAttributeCombinations.Add(new ProductAttributeCombinationDto()
+                {
+                    Records = _genericAttributeService.GetAttribute<List<int>>(combination, "nop.product.attribute.combination.records"),
+                    Id = combination.Id,
+                    StockQuantity = combination.StockQuantity,
+                    Gtin = combination.Gtin,
+                    Sku = combination.Sku,
+                    AllowOutOfStockOrders = combination.AllowOutOfStockOrders,
+                    ManufacturerPartNumber = combination.ManufacturerPartNumber,
+                    NotifyAdminForQuantityBelow = combination.NotifyAdminForQuantityBelow,
+                    OverriddenPrice = combination.OverriddenPrice
+                });
+            }
+        }
+
+        private void PrepareProductTierPrices(ICollection<TierPrice> tierPrices, ProductDto productDto)
+        {
+            productDto.DtoTierPrices = new List<TierPriceDto>();
+
+            foreach (var tier in tierPrices)
+            {
+                productDto.DtoTierPrices.Add(tier.ToDto());
+            }
+        }
+
         public CategoryDto PrepareCategoryDTO(Category category)
         {
             var categoryDto = category.ToDto();
@@ -225,16 +291,11 @@ namespace Nop.Plugin.Api.Helpers
             {
                 var orderDto = order.ToDto();
 
-                orderDto.OrderItems = _orderService.GetOrderItems(order.Id).Select(PrepareOrderItemDTO).ToList();
-                orderDto.Shipments = _shipmentService.GetShipmentsByOrderId(order.Id).Select(PrepareShippingItemDTO).ToList();
-                
-                var billingAddress = _addressService.GetAddressById(order.BillingAddressId);
-                orderDto.BillingAddress = billingAddress.ToDto();
-
-                if (order.ShippingAddressId.HasValue)
+                var checkoutAttributes = _checkoutAttributeParser.ParseCheckoutAttributeValues(order.CheckoutAttributesXml).SelectMany(x => x.values);
+                var commentAttribute = checkoutAttributes.FirstOrDefault(x => x.Name.Equals("kommentar", StringComparison.InvariantCultureIgnoreCase));
+                if (commentAttribute != null)
                 {
-                    var shippingAddress = _addressService.GetAddressById(order.ShippingAddressId.Value);
-                    orderDto.ShippingAddress = shippingAddress.ToDto();
+                    orderDto.Comment = commentAttribute.Name;
                 }
                 
                 var customerDto = _customerApiService.GetCustomerById(order.CustomerId);
@@ -250,7 +311,7 @@ namespace Nop.Plugin.Api.Helpers
             {
                 throw;
             }
-            
+
         }
 
         public ShoppingCartItemDto PrepareShoppingCartItemDTO(ShoppingCartItem shoppingCartItem)
@@ -262,21 +323,6 @@ namespace Nop.Plugin.Api.Helpers
             return dto;
         }
 
-        public ShipmentDto PrepareShippingItemDTO(Shipment shipment)
-        {
-            return new ShipmentDto()
-            {
-                AdminComment = shipment.AdminComment,
-                CreatedOnUtc = shipment.CreatedOnUtc,
-                DeliveryDateUtc = shipment.DeliveryDateUtc,
-                Id = shipment.Id,
-                OrderId = shipment.OrderId,
-                ShippedDateUtc = shipment.ShippedDateUtc,
-                TotalWeight = shipment.TotalWeight,
-                TrackingNumber = shipment.TrackingNumber
-            };
-
-        }
         public OrderItemDto PrepareOrderItemDTO(OrderItem orderItem)
         {
             var dto = orderItem.ToDto();
@@ -335,13 +381,16 @@ namespace Nop.Plugin.Api.Helpers
 
                 if (imageDto != null)
                 {
+                    var picture = _pictureService.GetPictureById(productPicture.PictureId);
+
                     var productImageDto = new ImageMappingDto
                     {
                         Id = productPicture.Id,
-                        PictureId = productPicture.PictureId,
                         Position = productPicture.DisplayOrder,
                         Src = imageDto.Src,
-                        Attachment = imageDto.Attachment
+                        Alt = picture.AltAttribute,
+                        Title = picture.TitleAttribute,
+                        PictureId = productPicture.PictureId
                     };
 
                     productDto.Images.Add(productImageDto);
@@ -395,6 +444,9 @@ namespace Nop.Plugin.Api.Helpers
 
             if (productAttributeMapping != null)
             {
+                var product = _productService.GetProductById(productAttributeMapping.ProductId);
+                var productAttributeValues = _productAttributeService.GetProductAttributeValues(productAttributeMapping.Id);
+
                 productAttributeMappingDto = new ProductAttributeMappingDto
                 {
                     Id = productAttributeMapping.Id,
@@ -405,19 +457,13 @@ namespace Nop.Plugin.Api.Helpers
                     AttributeControlTypeId = productAttributeMapping.AttributeControlTypeId,
                     DisplayOrder = productAttributeMapping.DisplayOrder,
                     IsRequired = productAttributeMapping.IsRequired,
-                    //TODO: Somnath
-                    //ProductAttributeValues = _productAttributeService.GetProductAttributeValueById(productAttributeMapping.Id).
-                    //                                                .Select(x =>
-                    //                                                            PrepareProductAttributeValueDto(x,
-                    //                                                                                            productAttributeMapping
-                    //                                                                                                .Product))
-                    //                                                .ToList()
+                    ProductAttributeValues = productAttributeValues
+                        .Select(x => PrepareProductAttributeValueDto(x, product)).ToList()
                 };
             }
 
             return productAttributeMappingDto;
         }
-
         public CustomerDto PrepareCustomerDTO(Customer customer)
         {
             var result = customer.ToDto();
@@ -430,24 +476,37 @@ namespace Nop.Plugin.Api.Helpers
             return result;
         }
 
-        private void PrepareProductAttributeCombinations(IEnumerable<ProductAttributeCombination> productAttributeCombinations,
-            ProductDto productDto)
+        private ProductAttributeValueDto PrepareProductAttributeValueDto(ProductAttributeValue productAttributeValue,
+            Product product)
         {
-            productDto.ProductAttributeCombinations = productDto.ProductAttributeCombinations ?? new List<ProductAttributeCombinationDto>();
+            ProductAttributeValueDto productAttributeValueDto = null;
 
-            foreach (var productAttributeCombination in productAttributeCombinations)
+            if (productAttributeValue != null)
             {
-                var productAttributeCombinationDto = PrepareProductAttributeCombinationDto(productAttributeCombination);
-                if (productAttributeCombinationDto != null)
+                productAttributeValueDto = productAttributeValue.ToDto();
+                productAttributeValueDto.RecordId = _genericAttributeService.GetAttribute<int>(productAttributeValue, "nop.product.attributevalue.recordid");
+                if (productAttributeValue.ImageSquaresPictureId > 0)
                 {
-                    productDto.ProductAttributeCombinations.Add(productAttributeCombinationDto);
+                    var imageSquaresPicture =
+                        _pictureService.GetPictureById(productAttributeValue.ImageSquaresPictureId);
+                    var imageDto = PrepareImageDto(imageSquaresPicture);
+                    productAttributeValueDto.ImageSquaresImage = imageDto;
+                }
+
+                if (productAttributeValue.PictureId > 0)
+                {
+                    // make sure that the picture is mapped to the product
+                    // This is needed since if you delete the product picture mapping from the nopCommerce administrationthe
+                    // then the attribute value is not updated and it will point to a picture that has been deleted
+                    var productPicture = _productService.GetProductPicturesByProductId(product.Id).FirstOrDefault(pp => pp.PictureId == productAttributeValue.PictureId);
+                    if (productPicture != null)
+                    {
+                        productAttributeValueDto.ProductPictureId = productPicture.PictureId;
+                    }
                 }
             }
-        }
 
-        private ProductAttributeCombinationDto PrepareProductAttributeCombinationDto(ProductAttributeCombination productAttributeCombination)
-        {
-            return productAttributeCombination.ToDto();
+            return productAttributeValueDto;
         }
 
         public void PrepareProductSpecificationAttributes(IEnumerable<ProductSpecificationAttribute> productSpecificationAttributes, ProductDto productDto)
@@ -512,7 +571,7 @@ namespace Nop.Plugin.Api.Helpers
             return manufacturerDto;
         }
 
-        
+
         public TaxCategoryDto PrepareTaxCategoryDTO(TaxCategory taxCategory)
         {
             var taxRateModel = new TaxCategoryDto()
@@ -528,28 +587,3 @@ namespace Nop.Plugin.Api.Helpers
 
     }
 }
-
-
-
-//protected ImageMappingDto PrepareProductImageDto(ProductPicture productPicture)
-//{
-//    ImageMappingDto imageMapping = null;
-
-//    if (productPicture != null)
-//    {
-//        // We don't use the image from the passed dto directly 
-//        // because the picture may be passed with src and the result should only include the base64 format.
-//        imageMapping = new ImageMappingDto
-//        {
-//            //Attachment = Convert.ToBase64String(picture.PictureBinary),
-//            Id = productPicture.Id,
-//            ProductId = productPicture.ProductId,
-//            PictureId = productPicture.PictureId,
-//            Position = productPicture.DisplayOrder,
-//            MimeType = productPicture.Picture.MimeType,
-//            Src = _pictureService.GetPictureUrl(productPicture.Picture)
-//        };
-//    }
-
-//    return imageMapping;
-//}

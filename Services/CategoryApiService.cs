@@ -5,30 +5,34 @@ using Nop.Services.Stores;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Nop.Data;
+using Nop.Core.Domain.Catalog;
+using Nop.Core.Domain.Localization;
+using Nop.Plugin.Api.DataStructures;
+using Nop.Services.Stores;
 using static Nop.Plugin.Api.Infrastructure.Constants;
 
 namespace Nop.Plugin.Api.Services
 {
     public class CategoryApiService : ICategoryApiService
     {
-        private readonly IStoreMappingService _storeMappingService;
         private readonly IRepository<Category> _categoryRepository;
         private readonly IRepository<ProductCategory> _productCategoryMappingRepository;
+        private readonly IRepository<LocalizedProperty> _localizedPropertyRepository;
 
         public CategoryApiService(IRepository<Category> categoryRepository,
             IRepository<ProductCategory> productCategoryMappingRepository,
-            IStoreMappingService storeMappingService)
+            IRepository<LocalizedProperty> localizedPropertyRepository)
         {
             _categoryRepository = categoryRepository;
             _productCategoryMappingRepository = productCategoryMappingRepository;
-            _storeMappingService = storeMappingService;
+            _localizedPropertyRepository = localizedPropertyRepository;
         }
 
         public IList<Category> GetCategories(IList<int> ids = null,
             DateTime? createdAtMin = null, DateTime? createdAtMax = null, DateTime? updatedAtMin = null, DateTime? updatedAtMax = null,
-            int limit = Configurations.DefaultLimit, int page = Configurations.DefaultPageValue, int sinceId = Configurations.DefaultSinceId, 
-            int? productId = null,
-            bool? publishedStatus = null)
+            int limit = Configurations.DefaultLimit, int page = Configurations.DefaultPageValue, int sinceId = Configurations.DefaultSinceId,
+            int? productId = null, bool? publishedStatus = null, int? languageId = null)
         {
             var query = GetCategoriesQuery(createdAtMin, createdAtMax, updatedAtMin, updatedAtMax, publishedStatus, productId, ids);
 
@@ -37,8 +41,21 @@ namespace Nop.Plugin.Api.Services
             {
                 query = query.Where(c => c.Id > sinceId);
             }
+            var list = new ApiList<Category>(query, page - 1, limit);
 
-            return new ApiList<Category>(query, page - 1, limit);
+            if (languageId.HasValue)
+            {
+                var localizedNames = _localizedPropertyRepository.Table.Where(x => x.LocaleKeyGroup == "Category" && languageId == languageId.Value);
+                foreach (var cat in list)
+                {
+                    var localizedName = localizedNames.FirstOrDefault(x => x.EntityId == cat.Id);
+                    if (localizedName != null)
+                        cat.Name = localizedName.LocaleValue;
+                }
+            }
+
+            return list;
+            //return new ApiList<Category>(query, page - 1, limit);
         }
 
         public Category GetCategoryById(int id)
@@ -58,7 +75,7 @@ namespace Nop.Plugin.Api.Services
             var query = GetCategoriesQuery(createdAtMin, createdAtMax, updatedAtMin, updatedAtMax,
                                            publishedStatus, productId);
 
-            return query.Count(c => _storeMappingService.Authorize(c));
+            return query.Count();
         }
 
         private IQueryable<Category> GetCategoriesQuery(

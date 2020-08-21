@@ -12,6 +12,9 @@ namespace Nop.Plugin.Api.DTO.Products
     {
         private List<ProductAttributeValueDto> _productAttributeValues;
 
+        [JsonProperty("id")]
+        public string IdAsString { get => Id.ToString(); set => Id = int.Parse(value); }
+
         /// <summary>
         /// Gets or sets the product attribute identifier
         /// </summary>

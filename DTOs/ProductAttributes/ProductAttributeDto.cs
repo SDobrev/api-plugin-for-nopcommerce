@@ -8,6 +8,9 @@ namespace Nop.Plugin.Api.DTO.ProductAttributes
     //[Validator(typeof(ProductAttributeDtoValidator))]
     public class ProductAttributeDto : BaseDto
     {
+        [JsonProperty("id")]
+        public string IdAsString { get => Id.ToString(); set => Id = int.Parse(value); }
+
         /// <summary>
         /// Gets or sets the name
         /// </summary>

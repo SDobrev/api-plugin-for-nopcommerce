@@ -9,8 +9,8 @@ namespace Nop.Plugin.Api.DTO.Customers
     {
         private List<int> _roleIds;
 
-        [JsonProperty("customer_guid")]
-        public Guid CustomerGuid { get; set; }
+        [JsonProperty("id")]
+        public string IdAsString { get => Id.ToString(); set => Id = int.Parse(value); }
 
         [JsonProperty("username")]
         public string Username { get; set; }

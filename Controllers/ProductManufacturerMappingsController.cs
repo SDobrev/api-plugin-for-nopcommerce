@@ -25,7 +25,6 @@ using static Nop.Plugin.Api.Infrastructure.Constants;
 
 namespace Nop.Plugin.Api.Controllers
 {
-
     public class ProductManufacturerMappingsController : BaseApiController
     {
         private readonly IProductManufacturerMappingsApiService _productManufacturerMappingsService;

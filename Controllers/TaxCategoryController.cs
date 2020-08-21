@@ -23,7 +23,6 @@ using System.Net;
 
 namespace Nop.Plugin.Api.Controllers
 {
-
     public class TaxCategoryController : BaseApiController
     {
         //private readonly IProductApiService _productApiService;

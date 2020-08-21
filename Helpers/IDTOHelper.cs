@@ -36,7 +36,6 @@ namespace Nop.Plugin.Api.Helpers
         ManufacturerDto PrepareManufacturerDto(Manufacturer manufacturer);
         TaxCategoryDto PrepareTaxCategoryDTO(TaxCategory taxCategory);
         ImageMappingDto PrepareProductPictureDTO(ProductPicture productPicture);
-      
     }
 }
 

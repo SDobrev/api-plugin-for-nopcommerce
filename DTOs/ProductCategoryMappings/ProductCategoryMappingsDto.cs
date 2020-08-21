@@ -7,6 +7,9 @@ namespace Nop.Plugin.Api.DTO.ProductCategoryMappings
     //[Validator(typeof(ProductCategoryMappingDtoValidator))]
     public class ProductCategoryMappingDto : BaseDto
     {
+        [JsonProperty("id")]
+        public string IdAsString { get => Id.ToString(); set => Id = int.Parse(value); }
+
         /// <summary>
         /// Gets or sets the product identifier
         /// </summary>

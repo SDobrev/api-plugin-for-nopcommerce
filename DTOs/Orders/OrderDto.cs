@@ -15,6 +15,9 @@ namespace Nop.Plugin.Api.DTO.Orders
         private ICollection<OrderItemDto> _orderItems;
         private ICollection<ShipmentDto> _shipments;
 
+        [JsonProperty("id")]
+        public string IdAsString { get => Id.ToString(); set => Id = int.Parse(value); }
+
         [JsonProperty("store_id")]
         public int? StoreId { get; set; }
 
@@ -310,5 +313,8 @@ namespace Nop.Plugin.Api.DTO.Orders
         /// </summary>
         [JsonProperty("customer_tax_display_type")]
         public string CustomerTaxDisplayType { get; set; }
+
+        [JsonProperty("comment")]
+        public string Comment { get; set; }
     }
 }
