@@ -114,15 +114,12 @@ namespace Nop.Plugin.Api.Infrastructure
                                   {
                                       policy.Requirements.Add(new ActiveApiPluginRequirement());
                                       policy.Requirements.Add(new AuthorizationSchemeRequirement());
-                                      policy.Requirements.Add(new CustomerRoleRequirement());
                                       policy.RequireAuthenticatedUser();
                                   });
             });
 
             services.AddSingleton<IAuthorizationHandler, ActiveApiPluginAuthorizationPolicy>();
             services.AddSingleton<IAuthorizationHandler, ValidSchemeAuthorizationPolicy>();
-            services.AddSingleton<IAuthorizationHandler, CustomerRoleAuthorizationPolicy>();
-
         }
     }
 }

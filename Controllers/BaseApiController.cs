@@ -17,11 +17,12 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Nop.Plugin.Api.JSON.Serializers;
+using Nop.Plugin.Api.APIAuth;
 
 namespace Nop.Plugin.Api.Controllers
 {
     [ApiController]
-    [Authorize(Policy = JwtBearerDefaults.AuthenticationScheme, AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+    [BasicAuthentication]
     public class BaseApiController : Controller
     {
         protected readonly IJsonFieldsSerializer JsonFieldsSerializer;

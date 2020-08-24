@@ -64,26 +64,6 @@ namespace Nop.Plugin.Api.Infrastructure
 
             _settingService.SaveSetting(new ApiSettings());
 
-            var apiRole = _customerService.GetCustomerRoleBySystemName(Constants.Roles.ApiRoleSystemName);
-
-            if (apiRole == null)
-            {
-                apiRole = new CustomerRole
-                {
-                    Name = Constants.Roles.ApiRoleName,
-                    Active = true,
-                    SystemName = Constants.Roles.ApiRoleSystemName
-                };
-
-                _customerService.InsertCustomerRole(apiRole);
-            }
-            else if (apiRole.Active == false)
-            {
-                apiRole.Active = true;
-                _customerService.UpdateCustomerRole(apiRole);
-            }
-
-
             base.Install();
 
             // Changes to Web.Config trigger application restart.
@@ -95,14 +75,6 @@ namespace Nop.Plugin.Api.Infrastructure
         {
             //locales
             _localizationService.DeletePluginLocaleResources("Plugins.Api");
-
-            var apiRole = _customerService.GetCustomerRoleBySystemName(Constants.Roles.ApiRoleSystemName);
-            if (apiRole != null)
-            {
-                apiRole.Active = false;
-                _customerService.UpdateCustomerRole(apiRole);
-            }
-
 
             base.Uninstall();
         }

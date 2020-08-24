@@ -4,13 +4,6 @@ namespace Nop.Plugin.Api.Infrastructure
 {
     public static class Constants
     {
-        public static class Roles
-        {
-            public const string ApiRoleSystemName = "ApiUserRole";
-
-            public const string ApiRoleName = "Api Users";
-        }
-
         public static class ViewNames
         {
             public const string AdminLayout = "_AdminLayout";
@@ -24,8 +17,9 @@ namespace Nop.Plugin.Api.Infrastructure
 
         public static class Configurations
         {
-            public const int DefaultAccessTokenExpirationInDays = 3650; // 10 years
+            public const string ClientsSettingKey = "nop.plugin.api.clients";
 
+            public const int DefaultAccessTokenExpirationInDays = 3650; // 10 years
             
             public const int DefaultLimit = 50;
             public const int DefaultPageValue = 1;
