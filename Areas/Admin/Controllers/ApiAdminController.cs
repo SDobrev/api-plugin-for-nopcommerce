@@ -73,6 +73,8 @@ namespace Nop.Plugin.Api.Areas.Admin.Controllers
             if (model.EnableApi_OverrideForStore || storeScope == 0)
             {
                 _settingService.SaveSetting(settings, x => x.EnableApi, storeScope, false);
+                _settingService.SaveSetting(settings, x => x.ClientId, storeScope, false);
+                _settingService.SaveSetting(settings, x => x.ClientSecret, storeScope, false);
             }
 
             //now clear settings cache

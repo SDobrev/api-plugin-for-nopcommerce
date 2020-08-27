@@ -22,7 +22,7 @@ using Nop.Plugin.Api.APIAuth;
 namespace Nop.Plugin.Api.Controllers
 {
     [ApiController]
-    [BasicAuthentication]
+    [Authorize(Policy = JwtBearerDefaults.AuthenticationScheme, AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class BaseApiController : Controller
     {
         protected readonly IJsonFieldsSerializer JsonFieldsSerializer;

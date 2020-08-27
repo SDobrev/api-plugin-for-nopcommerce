@@ -84,7 +84,7 @@ namespace Nop.Plugin.Api.Infrastructure
 
                     a
                     .UseRouting()
-                    .UseAuthentication()
+                    //.UseAuthentication()
                     .UseAuthorization()
                     .UseEndpoints(endpoints =>
                     {
@@ -113,13 +113,12 @@ namespace Nop.Plugin.Api.Infrastructure
                                   policy =>
                                   {
                                       policy.Requirements.Add(new ActiveApiPluginRequirement());
-                                      policy.Requirements.Add(new AuthorizationSchemeRequirement());
-                                      policy.RequireAuthenticatedUser();
+                                      policy.Requirements.Add(new BasicAuthenticationRequirement());
                                   });
             });
 
             services.AddSingleton<IAuthorizationHandler, ActiveApiPluginAuthorizationPolicy>();
-            services.AddSingleton<IAuthorizationHandler, ValidSchemeAuthorizationPolicy>();
+            services.AddSingleton<IAuthorizationHandler, BasicAuthenticationAuthorizationPolicy>();
         }
     }
 }

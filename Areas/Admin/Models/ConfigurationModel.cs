@@ -8,6 +8,14 @@ namespace Nop.Plugin.Api.Areas.Admin.Models
         public bool EnableApi { get; set; }
         public bool EnableApi_OverrideForStore { get; set; }
 
+        [NopResourceDisplayName("Plugins.Api.Admin.ClientId")]
+        public string ClientId { get; set; }
+        public bool ClientId_OverrideForStore { get; set; }
+
+        [NopResourceDisplayName("Plugins.Api.Admin.ClientSecret")]
+        public string ClientSecret { get; set; }
+        public bool ClientSecret_OverrideForStore { get; set; }
+
         [NopResourceDisplayName("Plugins.Api.Admin.AllowRequestsFromSwagger")]
         public bool AllowRequestsFromSwagger { get; set; }
         public bool AllowRequestsFromSwagger_OverrideForStore { get; set; }

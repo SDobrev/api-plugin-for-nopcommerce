@@ -42,6 +42,26 @@
                                 <span asp-validation-for="EnableApi"></span>
                             </div>
                         </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                <nop-override-store-checkbox asp-for="ClientId_OverrideForStore" asp-input="ClientId" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                <nop-label asp-for="ClientId" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="ClientId" />
+                                <span asp-validation-for="ClientId"></span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-3">
+                                <nop-override-store-checkbox asp-for="ClientSecret_OverrideForStore" asp-input="ClientSecret" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                                <nop-label asp-for="ClientSecret" />
+                            </div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="ClientSecret" />
+                                <span asp-validation-for="ClientSecret"></span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

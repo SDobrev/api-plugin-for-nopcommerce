@@ -41,6 +41,10 @@ namespace Nop.Plugin.Api.Infrastructure
             _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Api.Admin.GeneralSettings", "General Settings");
             _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Api.Admin.EnableApi", "Enable Api");
             _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Api.Admin.EnableApi.Hint", "By checking this settings you can Enable/Disable the Web Api");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Api.Admin.ClientId", "Client Id");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Api.Admin.ClientId.Hint", "Client Id for basic authentication");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Api.Admin.ClientSecret", "Client Secret");
+            _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Api.Admin.ClientSecret.Hint", "Client Secret for basic authentication");
 
             _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Api.Admin.Menu.Title", "API");
             _localizationService.AddOrUpdatePluginLocaleResource("Plugins.Api.Admin.Menu.Settings.Title", "Settings");
