@@ -46,8 +46,6 @@ namespace Nop.Plugin.Api.Controllers
         private readonly ILogger _logger;
         private readonly IGenericAttributeService _genericAttributeService;
         private readonly IRepository<GenericAttribute> _genericAttributeRepository;
-        private readonly IRepository<ProductAttributeCombination> _productAttributeCombinationRepository;
-        private readonly IRepository<Product> _productRepository;
         private readonly IProductAttributeParser _productAttributeParser;
 
         public ProductsController(IProductApiService productApiService,
@@ -70,7 +68,7 @@ namespace Nop.Plugin.Api.Controllers
                                   ILogger logger,
                                   IGenericAttributeService genericAttributeService,
                                   IRepository<GenericAttribute> genericAttributeRepository,
-                                  IProductAttributeParser productAttributeParser, IRepository<ProductAttributeCombination> productAttributeCombinationRepository, IRepository<Product> productRepository)
+                                  IProductAttributeParser productAttributeParser)
             : base(jsonFieldsSerializer, aclService, customerService, storeMappingService, storeService, discountService, customerActivityService, localizationService, pictureService)
         {
             _productApiService = productApiService;
@@ -85,8 +83,6 @@ namespace Nop.Plugin.Api.Controllers
             _genericAttributeService = genericAttributeService;
             _genericAttributeRepository = genericAttributeRepository;
             _productAttributeParser = productAttributeParser;
-            _productAttributeCombinationRepository = productAttributeCombinationRepository;
-            _productRepository = productRepository;
         }
 
         /// <summary>
@@ -627,12 +623,7 @@ namespace Nop.Plugin.Api.Controllers
             if (productAttributeCombinations == null)
                 return;
 
-            //TODO: 
-            var combinations = (from pac in _productAttributeCombinationRepository.Table
-                join p in _productRepository.Table on pac.ProductId equals p.Id
-                where p.Id == product.Id
-                orderby pac.ProductId, pac.Id
-                select pac).ToList();
+            var combinations = _productAttributeService.GetAllProductAttributeCombinations(product.Id);
 
             // REMOVE OLD ProductAttributeCombinations! // IF ID IS NOT IN LIST THEN REMOVE!
             if (combinations.Count > 0)
