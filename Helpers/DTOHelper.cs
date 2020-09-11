@@ -226,6 +226,7 @@ namespace Nop.Plugin.Api.Helpers
             {
                 productDto.ProductAttributeCombinations.Add(new ProductAttributeCombinationDto()
                 {
+                    ProductId = combination.ProductId,
                     Records = _genericAttributeService.GetAttribute<List<int>>(combination, "nop.product.attribute.combination.records"),
                     Id = combination.Id,
                     StockQuantity = combination.StockQuantity,

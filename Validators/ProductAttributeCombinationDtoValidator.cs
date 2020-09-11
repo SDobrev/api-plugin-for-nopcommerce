@@ -22,12 +22,14 @@ namespace Nop.Plugin.Api.Validators
 
         private void SetAttributesXmlRule()
         {
-            SetNotNullOrEmptyCreateOrUpdateRule(p => p.AttributesXml, "invalid attributes xml", "attributes_xml");
+            // Removed the validation to prevent retuning errors when creating products from AdminD
+            // SetNotNullOrEmptyCreateOrUpdateRule(p => p.AttributesXml, "invalid attributes xml", "attributes_xml");
         }
 
         private void SetProductIdRule()
         {
-            SetGreaterThanZeroCreateOrUpdateRule(p => p.ProductId, "invalid product id", "product_id");
+            // Removed the validation to prevent retuning errors when creating products from AdminD
+            //SetGreaterThanZeroCreateOrUpdateRule(p => p.ProductId, "invalid product id", "product_id");
         }
 
         #endregion

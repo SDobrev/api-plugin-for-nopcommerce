@@ -50,6 +50,8 @@ namespace Nop.Plugin.Api.AutoMapper
 
             CreateMap<Manufacturer, ManufacturerDto>();
 
+            CreateMap<TierPrice, TierPriceDto>();
+
             CreateClientToClientApiModelMap();
 
             CreateAddressMap();
