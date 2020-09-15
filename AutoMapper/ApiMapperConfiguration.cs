@@ -52,6 +52,8 @@ namespace Nop.Plugin.Api.AutoMapper
 
             CreateMap<TierPrice, TierPriceDto>();
 
+            CreateMap<ProductAttributeValueDto, ProductAttributeValue>();
+
             CreateClientToClientApiModelMap();
 
             CreateAddressMap();

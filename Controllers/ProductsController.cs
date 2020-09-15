@@ -12,6 +12,7 @@ using Nop.Plugin.Api.Factories;
 using Nop.Plugin.Api.Helpers;
 using Nop.Plugin.Api.JSON.ActionResults;
 using Nop.Plugin.Api.JSON.Serializers;
+using Nop.Plugin.Api.MappingExtensions;
 using Nop.Plugin.Api.ModelBinders;
 using Nop.Plugin.Api.Models.ProductsParameters;
 using Nop.Plugin.Api.Services;
@@ -551,6 +552,15 @@ namespace Nop.Plugin.Api.Controllers
 
                     // add new product attribute
                     _productAttributeService.InsertProductAttributeMapping(newProductAttributeMapping);
+
+                    foreach (var attributeValueDto in productAttributeMappingDto.ProductAttributeValues)
+                    {
+                        var attributeValue = attributeValueDto.ToEntity();
+                        attributeValue.ProductAttributeMappingId = newProductAttributeMapping.Id;
+
+                        _productAttributeService.InsertProductAttributeValue(attributeValue);
+                    }
+
                     productAttributeMappingDto.Id = newProductAttributeMapping.Id;
 
                     var productAttributeValues = _productAttributeService.GetProductAttributeValues(newProductAttributeMapping.Id);
