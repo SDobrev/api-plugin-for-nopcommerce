@@ -466,7 +466,14 @@ namespace Nop.Plugin.Api.Controllers
                 orderCaptured = _orderProcessingService.CanCapture(orderToCapture);
                 if (orderCaptured)
                 {
-                    orderToCapture.ShippingStatus = ShippingStatus.Shipped;
+                    // Set the shipping status to shipped if the order doesn't contain only gift cards.
+                    if (!_orderService.GetOrderItems(orderToCapture.Id)
+                        .All(x => _productService.GetProductById(x.ProductId).IsGiftCard))
+                    {
+                        orderToCapture.ShippingStatus = ShippingStatus.Shipped;
+                        _orderService.UpdateOrder(orderToCapture);
+                    }
+
                     var errors = _orderProcessingService.Capture(orderToCapture);
 
                     if (errors.Count > 0)
