@@ -16,14 +16,16 @@ namespace Nop.Plugin.Api.DTO.Manufacturers
         private List<int> _storeIds;
         private List<int> _discountIds;
         private List<int> _roleIds;
+        
+        [JsonProperty("id")]
+        public string IdAsString { get => Id.ToString(); set => Id = int.Parse(value); }
 
         /// <summary>
         /// Gets or sets the name
         /// </summary>
         [JsonProperty("name")]
         public string Name { get; set; }
-
-
+        
         /// <summary>
         /// Gets or sets the localized names
         /// </summary>
