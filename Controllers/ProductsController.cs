@@ -298,11 +298,12 @@ namespace Nop.Plugin.Api.Controllers
             }
 
             /*EXTRA*/
-            /*
-            var admindid = product.GetAttribute<int>("nop.product.admindid");
-            if (admindid != productDelta.Dto.AdmindId)
-                return Error(HttpStatusCode.Conflict, "admind", "does not match!");
-            */
+            var admindId = _genericAttributeService.GetAttribute<int>(product, "nop.product.admindid");
+            if (admindId != productDelta.Dto.AdmindId)
+            {
+                _genericAttributeService.SaveAttribute<int>(product, "nop.product.admindid", productDelta.Dto.AdmindId);
+            }
+
             UpdateProductTirePrices(product, productDelta.Dto.DtoTierPrices);
             UpdateProductGenericAttributes(product, productDelta.Dto.DtoGenericAttributes);
             /*EXTRA*/

@@ -454,8 +454,8 @@ namespace Nop.Plugin.Api.Controllers
             var orderNote = LocalizationService.GetResource("Plugins.Api.Orders.Capture");
             var captureStatus = "OK";
             var sb = new StringBuilder();
-            var orderCaptured = false;
-            if (order.Dto.Amount < orderToCapture.OrderTotal || order.Dto.Amount < orderToCapture.OrderTotal)
+
+            if (order.Dto.Amount != orderToCapture.OrderTotal)
             {
                 captureStatus = LocalizationService.GetResource("Plugins.Api.Orders.CaptureStatus.Error");
                 var messageText = $"Beløbet ({order.Dto.Amount.ToString()}) i Admind matcher ikke beløbet i webordren. Tryk på Ordredetaljer for at rette totalerne i nopShop";
@@ -463,7 +463,7 @@ namespace Nop.Plugin.Api.Controllers
             }
             else
             {
-                orderCaptured = _orderProcessingService.CanCapture(orderToCapture);
+                var orderCaptured = _orderProcessingService.CanCapture(orderToCapture);
                 if (orderCaptured)
                 {
                     // Set the shipping status to shipped if the order doesn't contain only gift cards.
